@@ -1,0 +1,13 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Delete Variant Inventory</h2>
+    <p>Are you sure you want to delete the inventory for <strong>{{ variant_inventory.product_variant }}</strong>?</p>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete</button>
+        <a href="{% url 'custom_admin:variant_inventory_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

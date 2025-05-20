@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}Wishlist{% endblock %}
+</head>
+<body>
+{% block content %}
+<div class="ht__bradcaump__area bradcaump--2">
+    <div class="google__map"><div class="map-contacts"><div id="googleMap2"></div></div></div>
+    <div class="ht__bradcaump__wrap">
+        <div class="container">
+            <div class="row"><div class="col-xs-12">
+                <div class="bradcaump__inner">
+                    <nav class="bradcaump-inner">
+                        <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
+                        <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
+                        <span class="breadcrumb-item active">Wishlist</span>
+                    </nav>
+                </div>
+            </div></div>
+        </div>
+    </div>
+</div>
+
+<div class="wishlist-area ptb--120 bg__white">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="wishlist-content">
+                    <div class="wishlist-table table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Remove</th>
+                                    <th>Image</th>
+                                    <th>Product Name</th>
+                                    <th>Unit Price</th>
+                                    <th>Stock Status</th>
+                                    <th>Add To Cart</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in w %}
+                                    {% with v=item.product.variants.first %}
+                                        {% if v and v.size_options.first %}
+                                            {% with s=v.size_options.first %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'products:remove-from-wishlist' item.product.id %}" class="remove-from-wishlist">
+                                                        <i class="icon-trash icons"></i> Remove
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'products:product_details' item.product.pid %}">
+                                                        <img src="{{ v.image.url }}" alt="" style="max-width: 80px; max-height: 80px; object-fit: cover;" />
+
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <a href="{% url 'products:product_details' item.product.pid %}">{{ item.product.name }}</a>
+                                                </td>
+                                                <td>&#8377; {{ s.price }}</td>
+                                                <td>
+                                                    <span class="wishlist-in-stock">
+                                                        {% if item.product.in_stock %}In Stock{% else %}Out of Stock{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if s.stock_quantity > 0 %}
+                                                        <button class="add-to-cart-btn"
+                                                                data-pid="{{ item.product.pid }}"
+                                                                data-variant-id="{{ v.id }}"
+                                                                data-size="{{ s.size }}"
+                                                                data-url="{% url 'products:add_to_cart' item.product.pid %}">
+                                                            <span><i class="icon-handbag icons"></i> Add To Cart</span>
+                                                        </button>
+                                                    {% else %}
+                                                        <span style="color: red; font-weight: bold;">Out of Stock</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endwith %}
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" style="text-align:center; font-size:18px;">
+                                            Wishlist is empty.
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+$(document).ready(function () {
+
+    // Remove from Wishlist Functionality
+    $(document).on('click', '.remove-from-wishlist', function (e) {
+        e.preventDefault();
+        const row = $(this).closest('tr');
+        const url = $(this).attr('href');
+
+        $.ajax({
+            url: url,
+            method: 'GET',
+            success: function () {
+                row.fadeOut(300, function () {
+                    $(this).remove();
+                    alert('Product removed from wishlist.');
+                });
+            },
+            error: function () {
+                alert('Error removing product. Please try again.');
+            }
+        });
+    });
+
+    // Add to Cart Functionality with Wishlist Removal
+    $(document).on('click', '.add-to-cart-btn', function (e) {
+        e.preventDefault();
+
+        const btn = $(this);
+        const row = btn.closest('tr');
+        const pid = btn.data('pid');
+        const variantId = btn.data('variant-id') || null;
+        const size = btn.data('size') || null;
+        const url = btn.data('url');
+
+        const payload = {
+            product_id: pid,
+            variant_id: variantId,
+            size: size,
+            quantity: 1
+        };
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: JSON.stringify(payload),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function (data) {
+                if (data.success) {
+                    alert('Product added to cart. Total items: ' + data.total_items);
+                    // Automatically remove product from wishlist
+                    row.fadeOut(300, function () {
+                        $(this).remove();
+                    });
+                } else {
+                    alert('Failed to add to cart: ' + (data.error || 'Unknown error'));
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error("Error details:", xhr.responseText);
+                alert('Error adding to cart.');
+            }
+        });
+    });
+
+});
+</script>
+
+
+{% endblock %}
+</body>
+</html>

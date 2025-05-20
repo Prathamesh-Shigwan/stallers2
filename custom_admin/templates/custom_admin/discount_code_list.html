@@ -1,0 +1,57 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Discount Coupon List</h2>
+
+    <a href="{% url 'custom_admin:add_coupon' %}" class="btn btn-success mb-3">Add New Coupon</a>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Discount</th>
+                <th>Valid From</th>
+                <th>Valid To</th>
+                <th>Active</th>
+                <th>Usage Limit</th>
+                <th>Per User Limit</th>
+                <th>Min Spend</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for coupon in coupons %}
+            <tr>
+                <td>{{ coupon.code }}</td>
+                <td>{{ coupon.description|default:"-" }}</td>
+                <td>
+                    {% if coupon.discount_amount %}
+                        ₹{{ coupon.discount_amount }}
+                    {% elif coupon.discount_percentage %}
+                        {{ coupon.discount_percentage }}%
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ coupon.valid_from|date:"d M Y" }}</td>
+                <td>{{ coupon.valid_to|date:"d M Y" }}</td>
+                <td>{% if coupon.active %}Yes{% else %}No{% endif %}</td>
+                <td>{{ coupon.usage_limit|default:"Unlimited" }}</td>
+                <td>{{ coupon.per_user_limit|default:"Unlimited" }}</td>
+                <td>₹{{ coupon.min_spend|default:"0.00" }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_coupon' coupon.id %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_coupon' coupon.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center">No coupons available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

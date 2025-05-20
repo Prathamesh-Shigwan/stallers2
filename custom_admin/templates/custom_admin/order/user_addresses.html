@@ -1,0 +1,81 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Addresses for {{ user.username }}</h2>
+
+    <h3>Shipping Addresses</h3>
+    {% if shipping_addresses %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Address 1</th>
+                    <th>Address 2</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Zipcode</th>
+                    <th>Country</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for address in shipping_addresses %}
+                <tr>
+                    <td>{{ address.shipping_full_name }}</td>
+                    <td>{{ address.shipping_email }}</td>
+                    <td style="white-space: pre-wrap;">{{ address.shipping_address1 }}</td>
+                    <td style="white-space: pre-wrap;">{{ address.shipping_address2 }}</td>
+                    <td>{{ address.shipping_city }}</td>
+                    <td>{{ address.shipping_state }}</td>
+                    <td>{{ address.shipping_zipcode }}</td>
+                    <td>{{ address.shipping_country }}</td>
+                    <td>{{ address.shipping_phone }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No shipping addresses found for this user.</p>
+    {% endif %}
+
+    <h3 class="mt-5">Billing Addresses</h3>
+    {% if billing_addresses %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Address 1</th>
+                    <th>Address 2</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Zipcode</th>
+                    <th>Country</th>
+                    <th>Phone</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for address in billing_addresses %}
+                <tr>
+                    <td>{{ address.billing_full_name }}</td>
+                    <td>{{ address.billing_email }}</td>
+                    <td style="white-space: pre-wrap;">{{ address.billing_address1 }}</td>
+                    <td style="white-space: pre-wrap;">{{ address.billing_address2 }}</td>
+                    <td>{{ address.billing_city }}</td>
+                    <td>{{ address.billing_state }}</td>
+                    <td>{{ address.billing_zipcode }}</td>
+                    <td>{{ address.billing_country }}</td>
+                    <td>{{ address.billing_phone }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No billing addresses found for this user.</p>
+    {% endif %}
+
+    <a href="{% url 'custom_admin:dashboard' %}" class="btn btn-secondary mt-4">Back to Dashboard</a>
+</div>
+{% endblock %}

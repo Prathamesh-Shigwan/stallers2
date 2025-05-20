@@ -1,0 +1,35 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>About Us</h2>
+    <a href="{% url 'custom_admin:add_about' %}" class="btn btn-success mb-3">Add About Section</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in about_items %}
+            <tr>
+                <td>{{ item.title }}</td>
+                <td>
+                    {% if item.image %}
+                    <img src="{{ item.image.url }}" alt="{{ item.title }}" width="50">
+                    {% else %}
+                    No Image
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_about' item.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_about' item.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

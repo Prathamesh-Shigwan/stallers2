@@ -1,0 +1,175 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .custom-file-upload {
+        display: inline-block;
+        padding: 8px 16px;
+        cursor: pointer;
+        background-color: #e0e0e0;
+        color: #333;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .styled-input input,
+    .styled-input textarea,
+    .styled-input select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .styled-input select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23666' d='M0 25l70 70 70-70H0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px;
+    }
+
+    .styled-input {
+        margin-bottom: 20px;
+    }
+
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #fff;
+        margin-bottom: 15px;
+    }
+
+    .custom-checkbox input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e91e63;
+        border-radius: 6px;
+        background-color: #e91e63;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked::before {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 6px;
+        width: 5px;
+        height: 10px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .custom-checkbox label {
+        margin: 0;
+        font-weight: 500;
+        color: #555;
+    }
+</style>
+
+<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Add Product</h2>
+    <form method="POST" enctype="multipart/form-data" style="max-width: 800px; margin: 0 auto;">
+        {% csrf_token %}
+
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Product ID</label>{{ form.pid }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Name</label>{{ form.name }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Title</label>{{ form.title }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Description</label>{{ form.description }}</div>
+
+
+
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Specification</label>{{ form.specification }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">User</label>{{ form.user }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Main Category</label>{{ form.main_category }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Subcategory</label>{{ form.sub_category }}</div>
+
+        <div class="border p-3 rounded mb-3 styled-input">
+            <label class="form-label">Product Status</label>
+            {{ form.product_status }}
+        </div>
+
+        <div class="custom-checkbox">
+            {{ form.status }}
+            <label for="{{ form.status.id_for_label }}">Active</label>
+        </div>
+        <div class="custom-checkbox">
+            {{ form.in_stock }}
+            <label for="{{ form.in_stock.id_for_label }}">In Stock</label>
+        </div>
+        <div class="custom-checkbox">
+            {{ form.featured }}
+            <label for="{{ form.featured.id_for_label }}">Featured</label>
+        </div>
+
+        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">SKU</label>{{ form.sku }}</div>
+
+        <h4 class="mt-4">Extra Images</h4>
+        <div id="extra-images" class="border p-3 rounded mb-3">
+            {{ formset.management_form }}
+            {% for form in formset %}
+                {{ form.id }}
+                <div class="mb-3 styled-input">
+                    <label class="form-label">Extra Image</label><br>
+                    <label for="{{ form.image.id_for_label }}" class="custom-file-upload">Choose Extra Image</label>
+                    {{ form.image }}
+                    <br><small class="extra-image-label">Not selected</small>
+                </div>
+                {% if form.DELETE %}
+                <div class="form-check">
+                    {{ form.DELETE }}
+                    <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Delete</label>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Add Product</button>
+            <a href="{% url 'custom_admin:product_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const imageInput = document.getElementById('id_image');
+    const imageLabel = document.getElementById('image-label');
+    if (imageInput) {
+        imageInput.addEventListener('change', () => {
+            imageLabel.textContent = imageInput.files.length ? imageInput.files[0].name : 'Not selected';
+        });
+    }
+
+    const videoInput = document.getElementById('id_video');
+    const videoLabel = document.getElementById('video-label');
+    if (videoInput) {
+        videoInput.addEventListener('change', () => {
+            videoLabel.textContent = videoInput.files.length ? videoInput.files[0].name : 'Not selected';
+        });
+    }
+
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        const label = input.closest('div').querySelector('.extra-image-label');
+        if (label && input.id.includes('image') && !['id_image'].includes(input.id)) {
+            input.addEventListener('change', () => {
+                label.textContent = input.files.length ? input.files[0].name : 'Not selected';
+            });
+        }
+    });
+</script>
+{% endblock %}

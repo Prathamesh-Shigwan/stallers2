@@ -1,0 +1,94 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .form-container {
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+        color: #495057;
+    }
+
+    .custom-file-upload {
+        display: inline-block;
+        padding: 4px 12px;
+        cursor: pointer;
+        background-color: #e0e0e0;
+        color: #333;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 13px;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="form-container">
+        <h2 class="text-center fw-semibold text-dark">Edit Banner</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% if field.name == 'image' %}
+                        <label for="id_image" class="custom-file-upload">Choose Image</label>
+                        {{ field }}
+                        <br><small id="image-label">Not selected</small>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                <a href="{% url 'custom_admin:banner_list' %}" class="btn btn-secondary btn-sm">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const imageInput = document.getElementById('id_image');
+    const imageLabel = document.getElementById('image-label');
+    if (imageInput) {
+        imageInput.addEventListener('change', () => {
+            imageLabel.textContent = imageInput.files.length ? imageInput.files[0].name : 'Not selected';
+        });
+    }
+</script>
+{% endblock %}

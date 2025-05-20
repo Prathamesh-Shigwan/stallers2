@@ -1,0 +1,97 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .styled-input input,
+    .styled-input textarea,
+    .styled-input select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .styled-input {
+        margin-bottom: 20px;
+    }
+
+    .custom-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #fff;
+        margin-bottom: 15px;
+    }
+
+    .custom-checkbox input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #007bff;
+        border-radius: 6px;
+        background-color: #007bff;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .custom-checkbox input[type="checkbox"]:checked::before {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 6px;
+        width: 5px;
+        height: 10px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .custom-checkbox label {
+        margin: 0;
+        font-weight: 500;
+        color: #555;
+    }
+</style>
+
+<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">{{ title }}</h2>
+    <form method="POST" style="max-width: 800px; margin: 0 auto;">
+        {% csrf_token %}
+
+        <div class="border p-3 rounded mb-3 styled-input"><label>Code</label>{{ form.code }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Description</label>{{ form.description }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Discount Amount</label>{{ form.discount_amount }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Discount Percentage</label>{{ form.discount_percentage }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Valid From</label>{{ form.valid_from }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Valid To</label>{{ form.valid_to }}</div>
+
+        <div class="custom-checkbox">{{ form.active }}<label for="{{ form.active.id_for_label }}">Active</label></div>
+        <div class="custom-checkbox">{{ form.auto_apply }}<label for="{{ form.auto_apply.id_for_label }}">Auto Apply</label></div>
+        <div class="custom-checkbox">{{ form.is_stackable }}<label for="{{ form.is_stackable.id_for_label }}">Is Stackable</label></div>
+
+        <div class="border p-3 rounded mb-3 styled-input"><label>Min Spend</label>{{ form.min_spend }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Min Quantity</label>{{ form.min_quantity }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Usage Limit</label>{{ form.usage_limit }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Per User Limit</label>{{ form.per_user_limit }}</div>
+
+        <div class="border p-3 rounded mb-3 styled-input"><label>Applicable Products</label>{{ form.applicable_products }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Applicable Categories</label>{{ form.applicable_categories }}</div>
+        <div class="border p-3 rounded mb-3 styled-input"><label>Allowed Users</label>{{ form.allowed_users }}</div>
+
+        <div class="border p-3 rounded mb-3 styled-input">
+            <label>Already Used By (View Only)</label>
+            {{ form.used_by }}
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Save Coupon</button>
+            <a href="{% url 'custom_admin:coupon_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Details</title>
+</head>
+<body>
+
+    <p>Hello <strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+
+    <p>Thank you for shopping with Stellars! We are delighted to confirm your order and are currently processing it. Below are the details of your purchase:</p>
+    <br>
+    <h1>Order Summary</h1>
+    <h2>Order Confirm - Order #{{ order.id }}</h2>
+    <p><strong>Your Order ID:</strong> {{ order.id }}</p>
+    <p><strong>Order Date:</strong> {{ order.created_at }}</p>
+
+    <h2>Order Items</h2>
+    <table border="1" cellspacing="0" cellpadding="5">
+        <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price</th>
+        </tr>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>&#8377; {{ item.price }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+    <h3>Shipping Charge: &#8377; {{ shipping_charge }}</h3>
+    <h3>Order Total: &#8377; {{ order.total }}</h3>
+    <h3>Final Total: &#8377; {{ final_total }}</h3>
+    <br>
+<p>Your order has been confirmed. You can view your invoice here: <a href="{{ invoice_link }}">View Invoice</a></p>
+
+
+</body>
+</html>

@@ -1,0 +1,46 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Subcategories</h2>
+    <div class="mb-4 d-flex justify-content-end gap-2">
+        <a href="{% url 'custom_admin:add_subcategory' %}" class="btn btn-success" style="background-color: #28a745; border-color: #28a745; font-weight: bold;">
+            Add Subcategory
+        </a>
+        <a href="{% url 'custom_admin:upload_subcategories_view' %}" class="btn btn-secondary" style="font-weight: bold;">
+            Bulk Upload
+        </a>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Title</th>
+                <th>Main Category</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for subcategory in subcategories %}
+            <tr>
+                <td>
+                    {% if subcategory.image %}
+                    <img src="{{ subcategory.image.url }}" alt="{{ subcategory.title }}" width="50" height="50">
+                    {% else %}
+                    <span>No Image</span>
+                    {% endif %}
+                </td>
+                <td>{{ subcategory.title }}</td>
+                <td>{{ subcategory.main_category.title }}</td>
+                <td>₹{{ subcategory.price|floatformat:2 }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_subcategory' subcategory.id %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_subcategory' subcategory.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {% block title %}Product Details{% endblock %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+</head>
+{% block content %}
+
+<section class="htc__product__details bg__white ptb--70">
+    <div class="htc__product__details__top">
+        <div class="container">
+            <div class="row">
+
+                <!-- Product Images -->
+                <div class="col-md-5 col-lg-5 col-sm-12 col-xs-12">
+                    <div class="htc__product__details__tab__content">
+                        <div class="product__big__images">
+                            <div class="portfolio-full-image">
+                                <div class="product-images">
+                                    <div class="main-image" id="mainImage">
+                                        <img id="mainImageTag" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                        <video id="mainVideoTag" width="100%" controls style="display: none; margin-top: 10px;">
+                                            <source id="mainVideoSource" src="" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    <div class="main-image" id="variantImage" style="display: none;">
+                                        <img id="variantMainImage" src="" alt="">
+                                        <video id="variantVideoTag" width="100%" controls style="display: none; margin-top: 10px;">
+                                            <source id="variantVideoSource" src="" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thumbnails -->
+<div class="product-thumbnails-slider">
+    <div class="thumbnail-container slick-slider" id="mainProductThumbnails">
+        <div class="thumbnail">
+            <img src="{{ product.image.url }}" onclick="changeMainImage('{{ product.image.url }}')">
+        </div>
+        {% for extra_image in product.extra_images.all %}
+        <div class="thumbnail">
+            <img src="{{ extra_image.image.url }}" onclick="changeMainImage('{{ extra_image.image.url }}')">
+        </div>
+        {% endfor %}
+        {% if product.video %}
+        <div class="thumbnail video-thumbnail">
+            <video onclick="changeMainMedia('{{ product.video.url }}', 'video')">
+                <source src="{{ product.video.url }}" type="video/mp4">
+            </video>
+            <div class="video-icon-overlay">
+                <i class="fa fa-play-circle"></i>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+                    </div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="col-md-7 col-lg-7 col-sm-12 col-xs-12 smt-40 xmt-40">
+                    <div class="ht__product__dtl">
+                        <div id="mainProductDetails">
+                            <h2 id="product-name">{{ product.name }}</h2>
+                            <ul class="pro__prize">
+                                <li class="old__prize">₹{{ product.old_price }}</li>
+                                <li>₹{{ product.price }}</li>
+                            </ul>
+                        </div>
+                        <div id="variantProductDetails" style="display: none;">
+                            <h2 id="variantName"></h2>
+                            <ul class="pro__prize">
+                                <li class="old__prize">₹<span id="variantOldPrice"></span></li>
+                                <li>₹<span id="variantPrice"></span></li>
+                            </ul>
+                        </div>
+
+                        <div class="sin__desc align--left">
+                            <p><span>Color:</span></p>
+                            <ul class="pro__variants" style="display: flex; gap: 10px;">
+                                <li class="variant">
+                                    <a href="#" onclick="showMainProduct()">
+                                        <img src="{{ product.image.url }}" width="50">
+                                    </a>
+                                </li>
+                                {% for variant in product.variants.all %}
+                                <li class="variant">
+                                    <a href="#" onclick="showVariant('{{ variant.id }}', '{{ variant.color }}', '{{ variant.price }}', '{{ variant.old_price }}', '{{ variant.image.url }}')">
+                                        <img src="{{ variant.image.url }}" width="50">
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <div class="sin__desc align--left">
+                            <p><span>Size</span></p>
+                            <select class="select__size" id="selected-size" name="selected_size">
+                                {% for size in product.size %}
+                                <option value="{{ size }}">{{ size }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <ul class="product__action_2">
+                                <li>
+                                    <div class="product-quantity">
+                                        <div class="cart-plus-minus">
+                                            <input class="cart-plus-minus-box" type="number" name="quantity" value="1" min="1" id="product-quantity">
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="ht__addto__cart">
+                                    <button id="add-to-cart-btn"
+                                            data-pid="{{ product.pid }}"
+                                            data-url="{% url 'products:add_to_cart' product.pid %}"
+                                            style="background-color: #3fd9b2; border: none; padding: 10px 20px; color: white; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                                        Add To Cart
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <input type="hidden" id="selectedVariantId" name="selected_variant_id" value="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- JS -->
+<script>
+function showMainProduct() {
+    document.getElementById('mainImage').style.display = 'block';
+    document.getElementById('variantImage').style.display = 'none';
+    document.getElementById('mainProductDetails').style.display = 'block';
+    document.getElementById('variantProductDetails').style.display = 'none';
+    document.getElementById('mainProductThumbnails').style.display = 'flex';
+    document.getElementById('variantThumbnails').style.display = 'none';
+    document.getElementById('selectedVariantId').value = '';
+}
+
+function showVariant(variantId, color, price, oldPrice, imageUrl) {
+    document.getElementById('mainImage').style.display = 'none';
+    document.getElementById('variantImage').style.display = 'block';
+    document.getElementById('variantMainImage').src = imageUrl;
+    document.getElementById('variantMainImage').style.display = 'block';
+    document.getElementById('variantVideoTag').style.display = 'none';
+    document.getElementById('variantVideoSource').src = '';
+
+    document.getElementById('mainProductDetails').style.display = 'none';
+    document.getElementById('variantProductDetails').style.display = 'block';
+    document.getElementById('variantName').innerText = `Variant - ${color}`;
+    document.getElementById('variantPrice').innerText = price;
+    document.getElementById('variantOldPrice').innerText = oldPrice;
+    document.getElementById('mainProductThumbnails').style.display = 'none';
+    document.getElementById('variantThumbnails').style.display = 'flex';
+    document.getElementById('selectedVariantId').value = variantId;
+}
+
+function changeMainImage(imageUrl, type = 'main') {
+    if (type === 'variant') {
+        document.getElementById('variantMainImage').src = imageUrl;
+        document.getElementById('variantMainImage').style.display = 'block';
+        document.getElementById('variantVideoTag').style.display = 'none';
+    } else {
+        document.getElementById('mainImageTag').src = imageUrl;
+        document.getElementById('mainImageTag').style.display = 'block';
+        document.getElementById('mainVideoTag').style.display = 'none';
+    }
+}
+
+function changeMainMedia(videoUrl, type = 'video', isVariant = false) {
+    if (isVariant) {
+        document.getElementById('variantMainImage').style.display = 'none';
+        document.getElementById('variantVideoTag').style.display = 'block';
+        document.getElementById('variantVideoSource').src = videoUrl;
+        document.getElementById('variantVideoTag').load();
+    } else {
+        document.getElementById('mainImageTag').style.display = 'none';
+        document.getElementById('mainVideoTag').style.display = 'block';
+        document.getElementById('mainVideoSource').src = videoUrl;
+        document.getElementById('mainVideoTag').load();
+    }
+}
+</script>
+
+<!-- CSS -->
+<style>
+.thumbnail-container {
+    overflow-x: auto;
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    max-width: 100%;
+    flex-wrap: nowrap;
+    scrollbar-width: auto;
+    scrollbar-color: #ccc transparent;
+}
+.thumbnail-container::-webkit-scrollbar {
+    height: 12px;
+}
+.thumbnail-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+.thumbnails-wrapper.horizontal {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    max-width: 100%;
+}
+.thumbnail {
+    flex: 0 0 auto;
+    width: 100px;
+    height: 100px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+.thumbnail img,
+.thumbnail video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.video-thumbnail .video-icon-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+.video-thumbnail .video-icon-overlay i {
+    font-size: 32px;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+</style>
+<script>
+$(document).ready(function(){
+    $('#mainProductThumbnails').slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        arrows: true,
+        infinite: false,
+        responsive: [
+            {
+                breakpoint: 768,
+                settings: {
+                    slidesToShow: 3,
+                }
+            },
+            {
+                breakpoint: 480,
+                settings: {
+                    slidesToShow: 2,
+                }
+            }
+        ]
+    });
+
+    $('#variantThumbnails').slick({
+        slidesToShow: 4,
+        slidesToScroll: 1,
+        arrows: true,
+        infinite: false,
+        responsive: [
+            {
+                breakpoint: 768,
+                settings: {
+                    slidesToShow: 3,
+                }
+            },
+            {
+                breakpoint: 480,
+                settings: {
+                    slidesToShow: 2,
+                }
+            }
+        ]
+    });
+});
+</script>
+
+{% endblock %}

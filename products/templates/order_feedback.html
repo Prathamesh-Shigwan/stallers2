@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ action }} Order - #{{ order.id }}</h2>
+    <p>Please provide your feedback before proceeding with the {{ action_lower }} request.</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="button" style="background-color: #4CAF50; color: white; padding: 10px 20px; border-radius: 5px;">Submit Feedback</button>
+    <a href="{% url 'products:order_details' order.id %}" class="button" style="background-color: #f44336; color: white; padding: 10px 20px; border-radius: 5px;">Cancel</a>
+</form>
+
+</div>
+{% endblock %}

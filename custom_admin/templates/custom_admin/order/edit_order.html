@@ -1,0 +1,94 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .form-container {
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-container h2 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-weight: 600;
+        color: #343a40;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+        color: #495057;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+        background-color: #fff;
+        color: #212529;
+        appearance: none;
+    }
+
+    .form-group select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140' width='14' height='14'%3E%3Cpath fill='%23666' d='M0 25l70 70 70-70H0z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="form-container">
+        <h2>Edit Order</h2>
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% if "email" in field.name %}
+                        <input type="email" name="{{ field.name }}" value="{{ field.value }}" class="form-control" />
+                    {% elif "address" in field.name or field.name == "feedback_note" %}
+                        <textarea name="{{ field.name }}" class="form-control">{{ field.value }}</textarea>
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'custom_admin:order_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

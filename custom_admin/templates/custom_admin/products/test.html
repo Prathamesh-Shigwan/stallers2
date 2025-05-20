@@ -1,0 +1,76 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Add Product</h2>
+    <form method="POST" enctype="multipart/form-data" style="max-width: 800px; margin: 0 auto;">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Name</label>
+            <input type="text" name="name" id="id_name" value="{{ form.name.value }}" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+        </div>
+        <div class="mb-3">
+            <label for="id_title" class="form-label">Title</label>
+            <input type="text" name="title" id="id_title" value="{{ form.title.value }}" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+        </div>
+        <div class="mb-3">
+            <label for="id_description" class="form-label">Description</label>
+            <textarea name="description" id="id_description" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">{{ form.description.value }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="id_image" class="form-label">Image</label>
+            <input type="file" name="image" id="id_image" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+        </div>
+        <div class="mb-3">
+            <label for="id_price" class="form-label">Price</label>
+            <input type="number" name="price" id="id_price" value="{{ form.price.value }}" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+        </div>
+        <div class="mb-3">
+            <label for="id_old_price" class="form-label">Old Price</label>
+            <input type="number" name="old_price" id="id_old_price" value="{{ form.old_price.value }}" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+        </div>
+        <div class="mb-3">
+            <label for="id_specification" class="form-label">Specification</label>
+            <textarea name="specification" id="id_specification" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">{{ form.specification.value }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="id_main_category" class="form-label">Main Category</label>
+            <select name="main_category" id="id_main_category" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+                {{ form.main_category }}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="id_sub_category" class="form-label">Subcategory</label>
+            <select name="sub_category" id="id_sub_category" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+                {{ form.sub_category }}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="id_product_status" class="form-label">Product Status</label>
+            <select name="product_status" id="id_product_status" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+                {{ form.product_status }}
+            </select>
+        </div>
+        <div class="form-check mb-3">
+            <input type="checkbox" name="status" id="id_status" {{ form.status.value|yesno:"checked," }} class="form-check-input" style="border: 1px solid #ccc;">
+            <label for="id_status" class="form-check-label">Active</label>
+        </div>
+        <div class="form-check mb-3">
+            <input type="checkbox" name="in_stock" id="id_in_stock" {{ form.in_stock.value|yesno:"checked," }} class="form-check-input" style="border: 1px solid #ccc;">
+            <label for="id_in_stock" class="form-check-label">In Stock</label>
+        </div>
+        <div class="form-check mb-3">
+            <input type="checkbox" name="featured" id="id_featured" {{ form.featured.value|yesno:"checked," }} class="form-check-input" style="border: 1px solid #ccc;">
+            <label for="id_featured" class="form-check-label">Featured</label>
+        </div>
+        <div class="mb-3">
+            <label for="id_sku" class="form-label">SKU</label>
+            <input type="text" name="sku" id="id_sku" value="{{ form.sku.value }}" class="form-control" style="border: 1px solid #ccc; padding: 8px; width: 100%; border-radius: 4px;">
+        </div>
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Add Product</button>
+            <a href="{% url 'custom_admin:product_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

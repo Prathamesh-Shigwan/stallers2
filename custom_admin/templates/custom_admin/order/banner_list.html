@@ -1,0 +1,39 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Banners</h2>
+    <a href="{% url 'custom_admin:add_banner' %}" class="btn btn-success mb-3">Add Banner</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Image</th>
+                <th>Status</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for banner in banners %}
+            <tr>
+                <td>{{ banner.title }}</td>
+                <td>
+                    {% if banner.image %}
+                    <img src="{{ banner.image.url }}" alt="{{ banner.title }}" width="100">
+                    {% else %}
+                    No Image
+                    {% endif %}
+                </td>
+                <td>{{ banner.is_active|yesno:"Active,Inactive" }}</td>
+                <td>{{ banner.created_at }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_banner' banner.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_banner' banner.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

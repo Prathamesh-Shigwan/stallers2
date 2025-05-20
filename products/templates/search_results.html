@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">Search Results for "<span class="text-primary">{{ query }}</span>"</h2>
+
+    {% if products %}
+        <div class="mb-5">
+            <h4 class="border-bottom pb-2">Products</h4>
+            <div class="row">
+                {% for product in products %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm border-0">
+                            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <p class="card-text">{{ product.description|truncatechars:80 }}</p>
+                                <a href="{% url 'products:product_details' product.pid %}" class="btn btn-outline-primary btn-sm">View Product</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if main_categories %}
+        <div class="mb-4">
+            <h4 class="border-bottom pb-2">Main Categories</h4>
+            <ul class="list-group">
+                {% for cat in main_categories %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ cat.title }}</span>
+                        <a href="{% url 'products:product_grid_by_main_category' cat.cid %}" class="btn btn-sm btn-outline-secondary">Explore</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if sub_categories %}
+        <div class="mb-4">
+            <h4 class="border-bottom pb-2">Subcategories</h4>
+            <ul class="list-group">
+                {% for sub in sub_categories %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>{{ sub.title }}</span>
+                        <a href="{% url 'products:product_grid_by_sub_category' sub.sid %}" class="btn btn-sm btn-outline-secondary">Browse</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if blogs %}
+        <div class="mb-4">
+            <h4 class="border-bottom pb-2">Blogs</h4>
+            <ul class="list-group">
+                {% for blog in blogs %}
+                    <li class="list-group-item">
+                        <a href="{{ blog.get_absolute_url }}" class="text-decoration-none text-dark fw-semibold">{{ blog.title }}</a>
+                        <p class="mb-0 text-muted small">{{ blog.content|truncatechars:100 }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if about_pages %}
+        <div class="mb-4">
+            <h4 class="border-bottom pb-2">About Pages</h4>
+            <ul class="list-group">
+                {% for page in about_pages %}
+                    <li class="list-group-item">{{ page.title }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if orders %}
+        <div class="mb-4">
+            <h4 class="border-bottom pb-2">Your Orders</h4>
+            <ul class="list-group">
+                {% for order in orders %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>Order #{{ order.id }} - {{ order.status }}</span>
+                        <a href="{% url 'products:order_details' order.id %}" class="btn btn-sm btn-outline-info">View Order</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if not products and not main_categories and not sub_categories and not blogs and not about_pages and not orders %}
+        <div class="alert alert-warning mt-4" role="alert">
+            No results found for "<strong>{{ query }}</strong>". Try another search term.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

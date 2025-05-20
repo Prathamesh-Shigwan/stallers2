@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+    /* Styles for the OTP container */
+    .otp-container {
+        border: 2px solid green; /* Green border */
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin: 50px auto;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 576px) {
+        .otp-container {
+            max-width: 90%; /* Adjust width to fit smaller screens */
+            margin: 20px auto;
+        }
+    }
+</style>
+
+<div class="container otp-container">
+    <h1>Verify OTP</h1>
+    <br>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <br>
+        <button type="submit" class="btn btn-primary">Verify OTP</button>
+    </form>
+</div>
+
+{% endblock %}

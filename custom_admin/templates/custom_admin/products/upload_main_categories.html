@@ -1,0 +1,58 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .custom-file-upload {
+        display: inline-block;
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #e91e63;
+        color: #fff;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .file-name {
+        margin-top: 5px;
+        font-style: italic;
+        color: #555;
+    }
+
+    .btn-group {
+        margin-top: 20px;
+    }
+</style>
+
+<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+    <h2 class="mb-3" style="text-align: center; font-weight: bold;">Bulk Upload Main Categories</h2>
+    <p>Upload an Excel file with columns: <strong>Title</strong>, <strong>Price</strong>, <strong>Image</strong>
+    (Image filename must already exist in <code>MEDIA_ROOT/uploads/categories/</code>).</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label for="excelFile" class="custom-file-upload">Choose File</label>
+        <input type="file" name="excel_file" id="excelFile" accept=".xlsx">
+        <div class="file-name" id="fileNameLabel">No file chosen</div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-danger">Upload</button>
+            <a href="{% url 'custom_admin:main_categories' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    const fileInput = document.getElementById('excelFile');
+    const fileNameLabel = document.getElementById('fileNameLabel');
+
+    fileInput.addEventListener('change', function() {
+        fileNameLabel.textContent = this.files.length > 0 ? this.files[0].name : 'No file chosen';
+    });
+</script>
+{% endblock %}

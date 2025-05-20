@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}CheckOut{% endblock %}
+
+{% block content %}
+<div class="ht__bradcaump__area bradcaump--2">
+    <div class="google__map">
+        <div class="map-contacts">
+            <div id="googleMap2"></div>
+        </div>
+    </div>
+    <div class="ht__bradcaump__wrap">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="bradcaump__inner">
+                        <nav class="bradcaump-inner">
+                          <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
+                          <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
+                          <span class="breadcrumb-item active">CheckOut</span>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Start Checkout Area -->
+<div class="checkout-wrap ptb--70">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="checkout__inner">
+                    <div class="accordion-list">
+                        <div class="accordion">
+
+                            <!-- FORM 1: Update Billing and Shipping Info -->
+                            <form method="post" action="{% url 'products:save_info' %}">
+                                {% csrf_token %}
+                                <div class="accordion__title">Billing Information</div>
+                                <div class="accordion__body">
+                                    <div class="bilinfo">
+                                        <div class="row">
+                                            <div class="col-md-12"><div class="single-input mt-0">{{ billing_form.billing_full_name }}</div></div>
+                                            <div class="col-md-12"><div class="single-input">{{ billing_form.billing_email }}</div></div>
+                                            <div class="col-md-12"><div class="single-input">{{ billing_form.billing_address1 }}</div></div>
+                                            <div class="col-md-12"><div class="single-input">{{ billing_form.billing_address2 }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ billing_form.billing_city }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ billing_form.billing_state }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ billing_form.billing_zipcode }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ billing_form.billing_country }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ billing_form.billing_phone }}</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion__title">Shipping Information</div>
+                                <div class="accordion__body" style="margin-bottom: 30px;">
+                                    <div class="shipinfo">
+                                        <div class="row">
+                                            <div class="col-md-12"><div class="single-input mt-0">{{ shipping_form.shipping_full_name }}</div></div>
+                                            <div class="col-md-12"><div class="single-input">{{ shipping_form.shipping_email }}</div></div>
+                                            <div class="col-md-12"><div class="single-input">{{ shipping_form.shipping_address1 }}</div></div>
+                                            <div class="col-md-12"><div class="single-input">{{ shipping_form.shipping_address2 }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ shipping_form.shipping_city }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ shipping_form.shipping_state }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ shipping_form.shipping_zipcode }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ shipping_form.shipping_country }}</div></div>
+                                            <div class="col-md-6"><div class="single-input">{{ shipping_form.shipping_phone }}</div></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12" style="text-align: center;">
+                                        <button type="submit" name="save_info"
+                                            style="background-color: #17a2b8; border: none; color: white; padding: 10px 20px; font-size: 15px; border-radius: 5px; width: 250px; font-weight: 500; cursor: pointer;">
+                                            Update Billing & Shipping Info
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDE ORDER SUMMARY -->
+            <div class="col-md-4">
+                <div class="order-details">
+                    <h5 class="order-details__title">Your Order</h5>
+
+{% for item in items %}
+    <div class="order-details__item" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;">
+        <div class="single-item" style="display: flex; gap: 15px;">
+            <div class="single-item__thumb" style="flex: 0 0 80px;">
+                {% if item.product_variant and item.product_variant.image %}
+                    <img src="{{ item.product_variant.image.url }}" alt="Variant Image" style="width: 80px; height: auto; object-fit: cover;">
+                {% else %}
+                    <img src="{{ item.product.image.url }}" alt="Product Image" style="width: 80px; height: auto; object-fit: cover;">
+                {% endif %}
+            </div>
+            <div class="single-item__content" style="flex: 1;">
+                <a href="#" style="font-weight: 600; font-size: 16px; color: #333;">{{ item.product.name }}</a>
+
+                {% if item.product_variant %}
+                    <p style="margin: 5px 0; font-size: 14px; color: #666;">
+                        Color: {{ item.product_variant.color }} |
+                        Size: {{ item.selected_size|default:item.product_variant.size_options.first.size }}
+                    </p>
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">₹ {{ item.unit_price|floatformat:2 }}</div>
+                {% else %}
+                    <p style="margin: 5px 0; font-size: 14px; color: #666;">
+                        Size: {{ item.selected_size }}
+                    </p>
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">₹ {{ item.product.price }}</div>
+                {% endif %}
+
+                <div style="font-size: 14px; color: #888; margin-bottom: 5px;">x {{ item.quantity }}</div>
+
+                <div style="background: #f7f7f7; padding: 5px 10px; border-radius: 5px; font-size: 13px; color: #777;">
+                    {% if item.product_variant %}
+                        Including ₹ {{ item.product_variant.price|mul:0.18|floatformat:2 }} tax (18%)
+                    {% else %}
+                        Including ₹ {{ item.product.price|mul:0.18|floatformat:2 }} tax (18%)
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+
+                    <div class="order-details__count" style="margin-top: 20px;">
+                        <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <h5>Sub Total</h5><span class="price">&#8377; {{ total }}</span>
+                        </div>
+                        <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <h5>Shipping</h5><span class="price">&#8377; {{ shipping }}</span>
+                        </div>
+                        <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <h5>Coupon Discount</h5><span class="price">- &#8377; {{ cart.discount_code.discount_amount|default_if_none:"0.00" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="ordre-details__total" style="display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: 700; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <h5>Order Total</h5><span class="price">&#8377; {{ final_total }}</span>
+                    </div>
+
+                    <div style="background: #f0f0f0; margin-top: 15px; padding: 10px 15px; border-radius: 6px; font-size: 14px; color: #555;">
+                        Including ₹ {{ total|mul:0.18|floatformat:2 }} tax (18% on product subtotal)
+                    </div>
+
+                    <!-- PAYMENT BUTTONS -->
+                    <div class="row" style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+
+                        <!-- Proceed to Payment -->
+                        <form method="post" action="{% url 'products:checkout' %}" style="width: 100%; text-align: center;">
+                            {% csrf_token %}
+                            <input type="hidden" name="final_total" value="{{ final_total }}">
+                            <button type="submit" name="process_payment" style="background-color: #007bff; border: none; color: white; padding: 12px 30px; font-size: 16px; border-radius: 6px; width: 220px; font-weight: 600; cursor: pointer;">
+                                Proceed to Payment
+                            </button>
+                        </form>
+
+                        <!-- Cash on Delivery -->
+                        <form method="post" action="{% url 'products:place_order_cod' %}" style="width: 100%; text-align: center;">
+                            {% csrf_token %}
+                            <button type="submit" name="process_cod" style="background-color: #28a745; border: none; color: white; padding: 12px 30px; font-size: 16px; border-radius: 6px; width: 220px; font-weight: 600; cursor: pointer;">
+                                Cash on Delivery
+                            </button>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- End Checkout Area -->
+
+{% endblock %}

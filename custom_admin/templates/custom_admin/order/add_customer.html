@@ -1,0 +1,84 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .form-container {
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-container h2 {
+        text-align: center;
+        font-weight: 600;
+        color: #343a40;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #ffffff;
+    }
+
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        display: block;
+        color: #495057;
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 13px;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="form-container">
+        <h2>Add Customer</h2>
+        <form method="POST">
+            {% csrf_token %}
+
+            <h4 class="mb-3">User Details</h4>
+            {% for field in user_form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <h4 class="mt-4 mb-3">Profile Details</h4>
+            {% for field in profile_form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-between mt-4">
+                <button type="submit" class="btn btn-success btn-sm">Add Customer</button>
+                <a href="{% url 'custom_admin:customer_list' %}" class="btn btn-secondary btn-sm">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

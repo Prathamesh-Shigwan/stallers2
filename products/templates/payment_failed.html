@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment Failed{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center">
+        <img src="{% static 'images/payment-failed.png' %}" alt="Payment Failed" style="width:150px; margin-bottom: 20px;">
+        <h2 class="text-danger">Payment Failed</h2>
+        <p class="mt-3 mb-4">
+            Unfortunately, your payment could not be processed.<br>
+            This may be due to a network issue, user cancellation, or payment gateway error.
+        </p>
+        <a href="{% url 'products:cart_view' %}" class="btn btn-primary">
+            Try Again
+        </a>
+        <a href="{% url 'products:order_tracking' %}" class="btn btn-secondary ms-2">
+            Check My Orders
+        </a>
+    </div>
+</div>
+{% endblock %}

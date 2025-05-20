@@ -1,0 +1,134 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">Cart List</h2>
+
+    <!-- Filter and Search Form -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <strong>Filters</strong>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="user" class="form-label">Search by User</label>
+                        <div class="input-group">
+                            <input
+                                type="text"
+                                name="user"
+                                id="user"
+                                class="form-control"
+                                placeholder="Enter username"
+                                value="{{ request.GET.user }}"
+                            >
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date" class="form-label">Filter by Date</label>
+                        <input
+                            type="date"
+                            name="date"
+                            id="date"
+                            class="form-control"
+                            value="{{ request.GET.date }}"
+                        >
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <a href="{% url 'custom_admin:add_cart' %}" class="btn btn-success mb-3">Add Cart</a>
+
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>
+                    <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.date %}date={{ request.GET.date }}&{% endif %}order_by=id">
+                        ID
+                    </a>
+                </th>
+                <th>
+                    <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.date %}date={{ request.GET.date }}&{% endif %}order_by=user">
+                        User
+                    </a>
+                </th>
+                <th>
+                    <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.date %}date={{ request.GET.date }}&{% endif %}order_by=total">
+                        Total
+                    </a>
+                </th>
+                <th>
+                    <a href="?{% if request.GET.user %}user={{ request.GET.user }}&{% endif %}{% if request.GET.date %}date={{ request.GET.date }}&{% endif %}order_by=updated">
+                        Last Updated
+                    </a>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cart in carts %}
+            <tr>
+                <td>{{ cart.id }}</td>
+                <td>{{ cart.user.username|default:"Guest" }}</td>
+                <td>₹{{ cart.total }}</td>
+                <td>{{ cart.updated }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_cart' cart.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_cart' cart.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="5">
+                    <strong>Cart Items:</strong>
+                    <table class="table table-bordered mt-2">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Variant</th>
+                                <th>Image</th>
+                                <th>Quantity</th>
+                                <th>Line Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart.cartitem_set.all %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product_variant|default:"-" }}</td>
+                                <td>
+                                    {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" width="50" height="50" class="img-thumbnail">
+                                    {% else %}
+                                    No Image
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹{{ item.line_total }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No items in this cart.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No carts available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

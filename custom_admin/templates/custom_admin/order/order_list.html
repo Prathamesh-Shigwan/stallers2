@@ -1,0 +1,152 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Orders</h2>
+
+    <form method="get" class="mb-3">
+        <div class="row">
+            <div class="col-md-2">
+                <div class="input-group">
+                    <input type="text" name="user" class="form-control" placeholder="Search by User" value="{{ request.GET.user }}" style="border: 2px solid #ccc;">
+                    <span class="input-group-text" style="background-color: #f8f9fa; border: 2px solid #ccc;">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-2" style="width: 22%;">
+                <select name="status" class="form-control" style="border: 2px solid #ccc;">
+                    <option value="">All Statuses</option>
+                    {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date" class="form-control" value="{{ request.GET.date }}" style="border: 2px solid #ccc;">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary" style="border: 2px solid #ccc;">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <a href="{% url 'custom_admin:add_order' %}" class="btn btn-success mb-3">Add Order</a>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Status</th>
+                <th>Total (After Discount)</th>
+                <th>Payment Method</th>
+                <th>Created At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.user.username }}</td>
+                <td>{{ order.get_status_display }}</td>
+                <td>
+                    ₹{{ order.total|floatformat:2 }}
+                    {% if order.discount and order.discount > 0 %}
+                        <br><small class="text-danger">- ₹{{ order.discount|floatformat:2 }}</small>
+                        <br><strong>Total: ₹{{ order.final_total|floatformat:2 }}</strong>
+                    {% endif %}
+                </td>
+                <td>{{ order.payment_method|default:"N/A" }}</td>
+                <td>{{ order.created_at }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_order' order.pk %}" class="btn btn-sm btn-primary" style="border: 2px solid #ccc;">Edit</a>
+                    <a href="{% url 'custom_admin:delete_order' order.pk %}" class="btn btn-sm btn-danger" style="border: 2px solid #ccc;">Delete</a>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="7">
+                    <strong>Order Items:</strong>
+                    <table class="table table-bordered mt-2">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Variant</th>
+                                <th>Image</th>
+                                <th>Size</th>
+                                <th>Quantity</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{% if item.product_variant %}{{ item.product_variant.color }}{% else %}N/A{% endif %}</td>
+                                <td>
+                                    {% if item.product_variant and item.product_variant.image %}
+                                        <img src="{{ item.product_variant.image.url }}" alt="Variant Image" width="50" height="50">
+                                    {% elif item.product.image %}
+                                        <img src="{{ item.product.image.url }}" alt="Product Image" width="50" height="50">
+                                    {% else %}
+                                        No Image
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.selected_size|default:"N/A" }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹{{ item.price|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No items in this order.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <table class="table table-bordered mt-4">
+                        <thead>
+                            <tr>
+                                <th>Billing Address</th>
+                                <th>Shipping Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <address>
+                                        <strong>{{ order.billing_full_name }}</strong><br>
+                                        {{ order.billing_email }}<br>
+                                        {{ order.billing_address1 }}<br>
+                                        {{ order.billing_address2 }}<br>
+                                        {{ order.billing_city }}, {{ order.billing_state }}<br>
+                                        {{ order.billing_zipcode }}, {{ order.billing_country }}<br>
+                                        Phone: {{ order.billing_phone }}
+                                    </address>
+                                </td>
+                                <td>
+                                    <address>
+                                        <strong>{{ order.shipping_full_name }}</strong><br>
+                                        {{ order.shipping_email }}<br>
+                                        {{ order.shipping_address1 }}<br>
+                                        {{ order.shipping_address2 }}<br>
+                                        {{ order.shipping_city }}, {{ order.shipping_state }}<br>
+                                        {{ order.shipping_zipcode }}, {{ order.shipping_country }}<br>
+                                        Phone: {{ order.shipping_phone }}
+                                    </address>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No orders available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

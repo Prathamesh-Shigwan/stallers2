@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Product Dashboard</h1>
+    <div class="stats">
+        <div>
+            <strong>Total Products:</strong> {{ products_count }}
+        </div>
+        <div>
+            <strong>Featured Products:</strong> {{ featured_products_count }}
+        </div>
+        <div>
+            <strong>Out of Stock Products:</strong> {{ out_of_stock_products_count }}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>E-commerce Invoice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f8f9fa;
+    }
+    .invoice-box {
+      background: #fff;
+      padding: 30px;
+      border: 1px solid #ccc;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    }
+    h1, h2, h3 {
+      margin: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .summary td {
+      font-weight: bold;
+    }
+    .buttons {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .buttons button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #007bff;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    .buttons button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<div class="invoice-box" id="invoice">
+  <h1>Whizz Tech</h1>
+  <p><strong>GSTIN:</strong> 27XXXXXXXXXXZ5<br>
+     <strong>Email:</strong> info@whizztech.in<br>
+     <strong>Phone:</strong> +91-9876543210<br>
+     <strong>Address:</strong> Mumbai, Maharashtra, India</p>
+
+  <hr>
+
+  <h2>Invoice</h2>
+  <p><strong>Invoice No:</strong> INV-1001<br>
+     <strong>Date:</strong> April 12, 2025</p>
+
+  <p><strong>Bill To:</strong><br>
+     Mr. Client Name<br>
+     client@example.com<br>
+     Pune, Maharashtra</p>
+
+  <h3>Development & Setup Charges</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th class="text-right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>E-commerce Website Design & Development</td>
+        <td>1</td>
+        <td>₹40,000</td>
+        <td class="text-right">₹40,000</td>
+      </tr>
+      <tr>
+        <td>Custom Features (Cart, Discount, Payment, etc.)</td>
+        <td>1</td>
+        <td>₹15,000</td>
+        <td class="text-right">₹15,000</td>
+      </tr>
+      <tr>
+        <td>Backend Admin Setup</td>
+        <td>1</td>
+        <td>₹10,000</td>
+        <td class="text-right">₹10,000</td>
+      </tr>
+      <tr>
+        <td>Server Deployment & Configuration</td>
+        <td>1</td>
+        <td>₹5,000</td>
+        <td class="text-right">₹5,000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Template Charges (TemplateForest)</h3>
+  <table>
+    <tbody>
+      <tr>
+        <td>Frontend Template</td>
+        <td>1</td>
+        <td>₹3,000</td>
+        <td class="text-right">₹3,000</td>
+      </tr>
+      <tr>
+        <td>Admin Panel Template</td>
+        <td>1</td>
+        <td>₹2,000</td>
+        <td class="text-right">₹2,000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Optional Add-ons</h3>
+  <table>
+    <tbody>
+      <tr>
+        <td>Razorpay/Stripe Payment Gateway Integration</td>
+        <td>1</td>
+        <td>₹2,500</td>
+        <td class="text-right">₹2,500</td>
+      </tr>
+      <tr>
+        <td>Email & SMS Notification System</td>
+        <td>1</td>
+        <td>₹2,000</td>
+        <td class="text-right">₹2,000</td>
+      </tr>
+      <tr>
+        <td>Domain & Hosting Setup</td>
+        <td>1</td>
+        <td>₹2,000</td>
+        <td class="text-right">₹2,000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Total Summary</h3>
+  <table class="summary">
+    <tr>
+      <td>Subtotal</td>
+      <td class="text-right">₹79,500</td>
+    </tr>
+    <tr>
+      <td>GST (18%)</td>
+      <td class="text-right">₹14,310</td>
+    </tr>
+    <tr>
+      <td><strong>Total Payable</strong></td>
+      <td class="text-right"><strong>₹93,810</strong></td>
+    </tr>
+  </table>
+
+  <p><strong>Payment Terms:</strong> 50% Advance, 50% on Completion<br>
+     <strong>Payment Mode:</strong> UPI / NEFT / Bank Transfer</p>
+</div>
+
+<div class="buttons">
+  <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+
+</body>
+</html>

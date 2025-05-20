@@ -1,0 +1,51 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center" style="font-weight: 600;">Products</h2>
+
+    {% if messages %}
+    <div class="container mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="{% url 'custom_admin:add_product' %}" class="btn btn-success">Add Product</a>
+        <a href="{% url 'custom_admin:upload_products' %}" class="btn btn-secondary">Bulk Upload</a>
+    </div>
+
+    <table class="table table-bordered table-striped shadow-sm rounded">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">Name (SKU)</th>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.name }} <small class="text-muted">({{ product.sku }})</small></td>
+                <td>{{ product.main_category }}</td>
+                <td>{{ product.get_product_status_display }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_product' product.id %}" class="btn btn-sm btn-primary me-1">Edit</a>
+                    <a href="{% url 'custom_admin:delete_product' product.id %}" class="btn btn-sm btn-danger me-1">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center">No products found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

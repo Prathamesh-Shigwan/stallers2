@@ -1,0 +1,33 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Customers</h2>
+    <a href="{% url 'custom_admin:add_customer' %}" class="btn btn-success mb-3">Add Customer</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customers %}
+            <tr>
+                <td>{{ customer.email }}</td>
+                <td>{{ customer.username }}</td>
+                <td>{{ customer.profile.phone }}</td>
+                <td>{{ customer.profile.city }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_customer' customer.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_customer' customer.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

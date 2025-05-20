@@ -1,0 +1,407 @@
+{% extends 'base.html' %}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {% block title %}Product Details{% endblock %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+</head>
+{% block content %}
+
+<section class="htc__product__details bg__white ptb--70">
+    <div class="container">
+        <div class="row">
+
+            <!-- Left: Main Image & Thumbnails -->
+            <div class="col-md-6 col-sm-12">
+                <div id="variantMediaDisplay">
+                    <img id="variantMainImage" src="{{ variant.image.url }}" alt="" style="width: 100%; max-height: 600px; object-fit: contain;">
+                    {% if variant.video %}
+                    <video id="variantVideoTag" width="100%" controls style="display: none; margin-top: 10px; max-height: 600px;">
+                        <source id="variantVideoSource" src="{{ variant.video.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    {% endif %}
+                </div>
+
+                <!-- Thumbnails Scroll -->
+                <div class="thumbnail-scroll-wrapper">
+                    <div class="thumbnail-track" id="variantThumbnails">
+                        <div class="thumbnail-box">
+                            <img src="{{ variant.image.url }}" onclick="setMedia('{{ variant.image.url }}', false)">
+                        </div>
+                        {% for image in variant.extra_images.all %}
+                        <div class="thumbnail-box">
+                            <img src="{{ image.image.url }}" onclick="setMedia('{{ image.image.url }}', false)">
+                        </div>
+                        {% endfor %}
+                        {% if variant.video %}
+                        <div class="thumbnail-box video-thumbnail">
+                            <video onclick="setMedia('{{ variant.video.url }}', true)">
+                                <source src="{{ variant.video.url }}" type="video/mp4">
+                            </video>
+                            <div class="video-icon-overlay">
+                                <i class="fa fa-play-circle"></i>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Product Info -->
+            <div class="col-md-6 col-sm-12">
+                <h2 id="variantName" style="margin-bottom: 10px;">{{ product.name }}{% if variant.color %} – {{ variant.color }}{% endif %}</h2>
+
+<div id="variantPricing" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+    <span id="variantOldPrice" class="text-muted" style="text-decoration: line-through; display: none;"></span>
+    <span id="variantPrice" style="font-weight: bold; font-size: 20px;">₹{{ variant.size_options.first.price }}</span>
+    <span id="variantDiscount" class="discount-pill" style="display: none;"></span>
+</div>
+<style>
+.discount-pill {
+    background-color: #000;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-block;
+    min-width: 60px;
+    text-align: center;
+}
+</style>
+
+
+                <!-- Color Options -->
+                <div style="margin-bottom: 20px;">
+                    <p style="font-weight: 600;">Color</p>
+                    <ul class="pro__variants" style="display: flex; gap: 10px; padding-left: 0; list-style: none;">
+                        {% for v in variants %}
+                        <li>
+                            <a href="#" onclick="selectVariant('{{ v.id }}')">
+                                <img src="{{ v.image.url }}" width="50" style="border: 1px solid #ccc; border-radius: 4px;">
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Size Options -->
+                <div style="margin-bottom: 20px;">
+                    <p style="font-weight: 600;">Size</p>
+                    <div id="sizeOptions" class="size-options">
+                        {% for s in variant.size_options.all %}
+                        <div class="size-option" onclick="selectSize(this, '{{ s.size }}')">{{ s.size }}</div>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="selected_size" id="selected-size-hidden">
+                </div>
+
+                <!-- Quantity -->
+                <div style="margin-bottom: 15px;">
+                    <label for="product-quantity" style="font-weight: 600; margin-bottom: 6px; display: block;">Quantity</label>
+                    <input class="cart-plus-minus-box" type="number" name="quantity" value="1" min="1" id="product-quantity" style="padding: 6px 12px; width: 80px;">
+                </div>
+
+                <!-- Add to Cart -->
+                <button id="add-to-cart-btn" data-pid="{{ product.pid }}" data-url="{% url 'products:add_to_cart' product.pid %}"
+                        style="background-color: #3fd9b2; border: none; padding: 10px 20px; color: white; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                    Add To Cart
+                </button>
+                <input type="hidden" id="selectedVariantId" name="selected_variant_id" value="{{ variant.id }}">
+            </div>
+        </div>
+
+        <!-- Description & Specification -->
+        <div class="row" style="margin-top: 40px;">
+            <div class="col-xs-12">
+                <ul class="pro__details__tab" role="tablist">
+                    <li role="presentation" class="description active">
+                        <a href="#description" role="tab" data-toggle="tab">Description</a>
+                    </li>
+                    <li role="presentation" class="review">
+                        <a href="#review" role="tab" data-toggle="tab">Specification</a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" id="description" class="tab-pane fade in active">
+                        <div class="pro__tab__content__inner">
+                            {% if product.description %}
+                                <p>{{ product.description|linebreaks }}</p>
+                            {% else %}
+                                <p>No description available for this product.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div role="tabpanel" id="review" class="tab-pane fade">
+                        <div class="pro__tab__content__inner">
+                            {% if product.specification %}
+                                <p>{{ product.specification|linebreaks }}</p>
+                            {% else %}
+                                <p>No specifications available for this product.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.thumbnail-scroll-wrapper {
+    overflow-x: auto;
+    margin-top: 15px;
+    padding-bottom: 6px;
+}
+.thumbnail-scroll-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+.thumbnail-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+.thumbnail-track {
+    display: flex;
+    gap: 10px;
+    width: max-content;
+}
+.thumbnail-box {
+    flex: 0 0 auto;
+    width: 20%;
+    aspect-ratio: 1 / 1;
+    max-width: 100px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.thumbnail-box img,
+.thumbnail-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.video-thumbnail {
+    position: relative;
+}
+.video-thumbnail .video-icon-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    color: white;
+    pointer-events: none;
+}
+.size-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.size-option {
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    padding: 12px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    user-select: none;
+    text-align: center;
+    min-width: 50px;
+}
+.size-option:hover {
+    border-color: #007bff;
+}
+.size-option.selected {
+    border-color: #007bff;
+    color: #007bff;
+}
+</style>
+
+<script>
+function selectVariant(variantId) {
+    document.getElementById('selectedVariantId').value = variantId;
+
+    fetch(`/products/get_variant_data/${variantId}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Elements
+            const imageTag = document.getElementById('variantMainImage');
+            const videoTag = document.getElementById('variantVideoTag');
+            const videoSource = document.getElementById('variantVideoSource');
+            const nameElem = document.getElementById('variantName');
+            const priceElem = document.getElementById('variantPrice');
+            const oldPriceElem = document.getElementById('variantOldPrice');
+            const discountElem = document.getElementById('variantDiscount');
+
+            // Main image
+            imageTag.src = data.image;
+            imageTag.style.display = 'block';
+            if (videoTag) videoTag.style.display = 'none';
+
+            // Name
+            nameElem.innerText = data.name;
+
+            // Initial price (first size)
+            priceElem.innerText = `₹${data.price}`;
+            if (data.old_price && parseFloat(data.old_price) > parseFloat(data.price)) {
+                oldPriceElem.style.display = 'inline';
+                oldPriceElem.innerText = `₹${data.old_price}`;
+
+                const discount = Math.round((parseFloat(data.old_price) - parseFloat(data.price)) / parseFloat(data.old_price) * 100);
+                discountElem.innerText = `${discount}% OFF`;
+                discountElem.style.display = 'inline-block';
+            } else {
+                oldPriceElem.style.display = 'none';
+                discountElem.style.display = 'none';
+            }
+
+            // Size options
+            const sizeOptionsDiv = document.getElementById('sizeOptions');
+            const sizeHiddenInput = document.getElementById('selected-size-hidden');
+            sizeOptionsDiv.innerHTML = '';
+            sizeHiddenInput.value = '';
+
+            data.sizes.forEach(sizeObj => {
+                const btn = document.createElement('div');
+                btn.classList.add('size-option');
+                btn.textContent = sizeObj.size;
+
+                btn.onclick = () => {
+                    document.querySelectorAll('.size-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    sizeHiddenInput.value = sizeObj.size;
+
+                    priceElem.innerText = `₹${sizeObj.price}`;
+
+                    if (sizeObj.old_price && parseFloat(sizeObj.old_price) > parseFloat(sizeObj.price)) {
+                        oldPriceElem.style.display = 'inline';
+                        oldPriceElem.innerText = `₹${sizeObj.old_price}`;
+
+                        const discount = Math.round((parseFloat(sizeObj.old_price) - parseFloat(sizeObj.price)) / parseFloat(sizeObj.old_price) * 100);
+                        discountElem.innerText = `${discount}% OFF`;
+                        discountElem.style.display = 'inline-block';
+                    } else {
+                        oldPriceElem.style.display = 'none';
+                        discountElem.style.display = 'none';
+                    }
+                };
+
+                sizeOptionsDiv.appendChild(btn);
+            });
+
+            // Thumbnails
+            const thumbnailTrack = document.getElementById('variantThumbnails');
+            thumbnailTrack.innerHTML = '';
+
+            const mainBox = document.createElement('div');
+            mainBox.classList.add('thumbnail-box');
+            const mainImg = document.createElement('img');
+            mainImg.src = data.image;
+            mainImg.onclick = () => setMedia(data.image, false);
+            mainBox.appendChild(mainImg);
+            thumbnailTrack.appendChild(mainBox);
+
+            data.extra_images.forEach(imgUrl => {
+                const box = document.createElement('div');
+                box.classList.add('thumbnail-box');
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                img.onclick = () => setMedia(imgUrl, false);
+                box.appendChild(img);
+                thumbnailTrack.appendChild(box);
+            });
+
+            if (data.video) {
+                const box = document.createElement('div');
+                box.classList.add('thumbnail-box', 'video-thumbnail');
+                const video = document.createElement('video');
+                video.src = data.video;
+                video.onclick = () => setMedia(data.video, true);
+                const overlay = document.createElement('div');
+                overlay.classList.add('video-icon-overlay');
+                overlay.innerHTML = `<i class="fa fa-play-circle"></i>`;
+                box.appendChild(video);
+                box.appendChild(overlay);
+                thumbnailTrack.appendChild(box);
+            }
+        });
+}
+
+function setMedia(url, isVideo = false) {
+    const imageTag = document.getElementById('variantMainImage');
+    const videoTag = document.getElementById('variantVideoTag');
+    const videoSource = document.getElementById('variantVideoSource');
+
+    if (isVideo) {
+        imageTag.style.display = 'none';
+        if (videoTag) {
+            videoTag.style.display = 'block';
+            videoSource.src = url;
+            videoTag.load();
+        }
+    } else {
+        if (videoTag) videoTag.style.display = 'none';
+        imageTag.style.display = 'block';
+        imageTag.src = url;
+    }
+}
+
+// Auto-load default variant
+window.addEventListener('DOMContentLoaded', () => {
+    const defaultVariantId = "{{ variant.id }}";
+    if (defaultVariantId) {
+        selectVariant(defaultVariantId);
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+
+    addToCartBtn.addEventListener('click', function () {
+        const productId = this.dataset.pid;
+        const variantId = document.getElementById('selectedVariantId').value;
+        const size = document.getElementById('selected-size-hidden').value;
+        const quantity = document.getElementById('product-quantity').value;
+
+        if (!size) {
+            alert('Please select a size before adding to cart.');
+            return;
+        }
+
+        fetch(this.dataset.url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                variant_id: variantId,
+                size: size,
+                quantity: quantity
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Product added to cart successfully!');
+            } else {
+                alert(data.error || 'Something went wrong while adding to cart.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while adding to cart.');
+        });
+    });
+});
+</script>
+
+
+{% endblock %}

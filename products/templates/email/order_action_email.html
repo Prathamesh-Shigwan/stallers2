@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order {{ action }}</title>
+</head>
+<body>
+    <h2>Order {{ action }}</h2>
+    <p>Dear {{ user.first_name }},</p>
+    <p>Your order #{{ order.id }} has been {{ action }}.</p>
+    <p><strong>Order Details:</strong></p>
+    <ul>
+        {% for item in order.orderitem_set.all %}
+        <li>{{ item.quantity }} x {{ item.product.name }}</li>
+        {% endfor %}
+    </ul>
+    <p>If you have any questions, please contact our support team.</p>
+    <p>Thank you for shopping with us!</p>
+</body>
+</html>

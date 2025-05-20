@@ -1,0 +1,20 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Variant Inventory</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="id_product_variant" class="form-label">Product Variant</label>
+            {{ form.product_variant }}
+        </div>
+        <div class="mb-3">
+            <label for="id_stock_quantity" class="form-label">Stock Quantity</label>
+            {{ form.stock_quantity }}
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="{% url 'custom_admin:variant_inventory_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

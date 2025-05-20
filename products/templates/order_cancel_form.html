@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<br>
+<br>
+<br>
+<div class="container" style="border: 2px solid #9EDBC5; padding: 20px; border-radius: 10px; max-width: 90%; margin: auto;">
+    <h1 style="font-size: 24px; text-align: center;">Cancel Order #{{ order.id }}</h1>
+    <form method="post" action="{% url 'products:request_order_cancel' order.id %}" style="font-size: 16px;">
+        {% csrf_token %}
+        <label for="cancellation_reason" style="display: block; margin-bottom: 10px; font-weight: bold;">What is the primary reason for canceling your order?</label>
+        <select name="cancellation_reason" id="cancellation_reason" required
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+            <option value="I found a better price elsewhere">I found a better price elsewhere</option>
+            <option value="Delivery is taking too long">Delivery is taking too long</option>
+            <option value="Changed my mind">Changed my mind</option>
+            <option value="Purchased the wrong item">Purchased the wrong item</option>
+            <option value="Product details (description, size, color) were incorrect">
+                Product details (description, size, color) were incorrect
+            </option>
+            <option value="Ordered by mistake">Ordered by mistake</option>
+            <option value="Other">Other (please specify)</option>
+        </select>
+
+        <div id="other_reason" style="display: none; margin-top: 10px;">
+            <label for="other_text" style="font-weight: bold;">Please specify:</label>
+            <input type="text" name="other_text" id="other_text"
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; margin-top: 5px;"
+                   placeholder="Enter your reason here">
+        </div>
+
+        <button type="submit"
+                style="display: block; width: 100%; background-color: #9EDBC5; color: black; border: none; padding: 10px; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 20px;">
+            Submit Cancellation
+        </button>
+    </form>
+</div>
+<br>
+<br>
+<br>
+
+<script>
+    // Show 'Other' input field if 'Other' is selected
+    document.getElementById('cancellation_reason').addEventListener('change', function () {
+        var otherReason = document.getElementById('other_reason');
+        if (this.value === 'Other') {
+            otherReason.style.display = 'block';
+        } else {
+            otherReason.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

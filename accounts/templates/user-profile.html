@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}User Profile{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+{% block content %}
+<main role="main">
+    <div class="register-area ptb--70">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 col-md-offset-3">
+
+                    <div class="note form-success" id="ResetSuccess" style="display:none;">
+                        We've sent you an email with a link to update your password.
+                    </div>
+
+                    <div class="login">
+                        <div id="CustomerLoginForm">
+                            <form method="POST">
+                                {% csrf_token %}
+                                <div class="login-form-container">
+                                    <div class="login-text">
+                                        <h2>User Profile</h2>
+
+                                        {% if user_form.errors or profile_form.errors %}
+                                            <div class="alert alert-danger">
+                                                <strong>{{ user_form.errors }} {{ profile_form.errors }}</strong>
+                                            </div>
+                                        {% endif %}
+
+                                        <div class="login-form">
+                                            <!-- User Update Form Fields -->
+                                            {{ user_form.as_p }}
+
+                                            <!-- Profile Form Fields -->
+                                            {{ profile_form.as_p }}
+
+                                            <div class="button-box">
+                                                <div class="login-toggle-btn">
+                                                    <button type="submit" class="default-btn floatright">Update</button>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div id="RecoverPasswordForm" style="display: none;">
+                            <!-- Password reset form if needed -->
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,482 @@
+{% extends "custom_admin/base_site.html" %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-2">
+      <div class="row">
+        <div class="ms-3">
+          <h3 class="mb-0 h4 font-weight-bolder">Dashboard</h3>
+          <p class="mb-4">
+            Check the sales, value and bounce rate by country.
+          </p>
+        </div>
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+
+</div>
+<div class="row">
+    <div class="col-12 mb-3">
+        <form method="get" class="row g-3">
+            <div class="col-auto">
+                <label for="start_date" class="form-label">Start Date</label>
+                {{ form.start_date }}
+            </div>
+            <div class="col-auto">
+                <label for="end_date" class="form-label">End Date</label>
+                {{ form.end_date }}
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary mt-4">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="row">
+        <!-- Total Sales -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Total Sales</p>
+                        <h4 class="mb-0">₹{{ total_sales|floatformat:2 }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">payments</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Total Orders -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+        <div class="card-header p-2 ps-3">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <p class="text-sm mb-0 text-capitalize">Total Orders</p>
+                    <h4 class="mb-0">{{ total_orders }}</h4> <!-- Display total orders -->
+                </div>
+                <div>
+                    <p class="text-sm mb-0 text-capitalize">Pre-Paid</p>
+                    <h4 class="mb-0">{{ prepaid_orders }}</h4> <!-- Display total orders -->
+                </div>
+                <div>
+                    <p class="text-sm mb-0 text-capitalize">COD</p>
+                    <h4 class="mb-0">{{ cod_orders }}</h4> <!-- Display total orders -->
+                </div>
+                <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                    <i class="material-symbols-rounded opacity-10">shopping_cart</i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </div>
+
+        <!-- Total Products -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Total Products</p>
+                        <h4 class="mb-0">{{ total_products }} Products / {{ total_variants }} Variants</h4>
+
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">inventory</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Products in Cart -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Products in Cart</p>
+                        <h4 class="mb-0">{{ products_in_cart }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">shopping_cart</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Cancel order   -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Canceled Orders</p>
+                        <h4 class="mb-0">{{ canceled_orders }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">shopping_cart</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Return order   -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Returned Orders</p>
+                        <h4 class="mb-0">{{ returned_orders }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">shopping_cart</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Replace order   -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Replace Orders</p>
+                        <h4 class="mb-0">{{ replaced_orders }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">shopping_cart</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Total Customers -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Total Customers</p>
+                        <h4 class="mb-0">{{ total_customers }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">group</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Blogs -->
+    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+            <div class="card-header p-2 ps-3">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="text-sm mb-0 text-capitalize">Total Blogs</p>
+                        <h4 class="mb-0">{{ total_blogs }}</h4>
+                    </div>
+                    <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
+                        <i class="material-symbols-rounded opacity-10">inventory</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+                <!-- Visitors Count -->
+</div>
+      </div>
+      <div class="row">
+          <div class="col-lg-4 col-md-6 mt-4 mb-4">
+    <div class="card">
+        <div class="card-body">
+            <h6 class="mb-0">Weekly Order Summary</h6>
+            <p class="text-sm">Order trends from Monday to Sunday</p>
+            <div class="pe-2">
+                <canvas id="weekly-order-chart" class="chart-canvas" height="170"></canvas>
+            </div>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+                <p class="mb-0 text-sm">Updated in real-time</p>
+            </div>
+        </div>
+    </div>
+</div>
+          <div class="col-lg-4 col-md-6 mt-4 mb-4">
+    <div class="card ">
+        <div class="card-body">
+            <h6 class="mb-0">Daily Sales</h6>
+            <p class="text-sm">(<span class="font-weight-bolder">+15%</span>) increase in today's sales.</p>
+            <div class="pe-2">
+                <div class="chart">
+                    <canvas id="chart-line" class="chart-canvas" height="170"></canvas>
+                </div>
+            </div>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+                <p class="mb-0 text-sm">updated 4 min ago</p>
+            </div>
+        </div>
+    </div>
+</div>
+          <div class="col-lg-4 mt-4 mb-3">
+    <div class="card">
+        <div class="card-body">
+            <h6 class="mb-0">Annual Sales</h6>
+            <p class="text-sm">Last Campaign Performance</p>
+            <div class="pe-2">
+                <div class="chart">
+                    <canvas id="chart-line-tasks" class="chart-canvas" height="170"></canvas>
+                </div>
+            </div>
+            <hr class="dark horizontal">
+            <div class="d-flex">
+                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+                <p class="mb-0 text-sm">just updated</p>
+            </div>
+        </div>
+    </div>
+</div>
+          <div class="d-flex gap-2 mb-4">
+    <a href="{% url 'custom_admin:download_weekly_order_report' %}" class="btn btn-outline-primary">Download Weekly Order Report</a>
+    <a href="{% url 'custom_admin:download_daily_sales_report' %}" class="btn btn-outline-primary">Download Daily Sales Report</a>
+    <a href="{% url 'custom_admin:download_monthly_sales_report' %}" class="btn btn-outline-primary">Download Monthly Sales Report</a>
+</div>
+
+      </div>
+      <div class="row mb-4">
+        <div class="col-lg-8 col-md-6 mb-md-0 mb-4">
+    <div class="card">
+        <div class="card-header pb-0">
+            <h6>Recent Orders</h6>
+            <p class="text-sm mb-0">
+                <i class="fa fa-check text-info" aria-hidden="true"></i>
+                <span class="font-weight-bold ms-1">{{ recent_orders.count }} recent orders</span>
+            </p>
+        </div>
+        <div class="card-body px-0 pb-2">
+            <div class="table-responsive">
+                <table class="table align-items-center mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Product Image</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Product Name</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">User Name</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Order Amount</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Payment Method</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Order Status</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Date & Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div>
+                                        <img src="{{ order.items.first.product.image.url }}" class="avatar avatar-sm me-3" alt="product">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% with order.items.first as item %}
+                                <span class="text-xs font-weight-bold">
+                                    {{ item.product.name }}
+                                    {% if item.product_variant %}
+                                        - {{ item.product_variant.color }}
+                                    {% endif %}
+                                    {% if item.selected_size %}
+                                        (Size: {{ item.selected_size }})
+                                    {% endif %}
+                                </span>
+                            {% endwith %}
+                            </td>
+                            <td>
+                                <span class="text-xs font-weight-bold">{{ order.user.username }}</span>
+                            </td>
+                            <td>
+                                <span class="text-xs font-weight-bold">₹{{ order.total }}</span>
+                            </td>
+                            <td>
+                                <span class="text-xs font-weight-bold">{{ order.payment_method|title }}</span>
+                            </td>
+                            <td>
+                                <span class="text-xs font-weight-bold">{{ order.status|title }}</span>
+                            </td>
+                            <td>
+                                <span class="text-xs font-weight-bold">{{ order.created_at|date:"Y-m-d H:i:s" }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <span class="text-xs text-muted">No recent orders available</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+        <div class="col-lg-4 col-md-6">
+    <div class="card h-100">
+        <div class="card-header pb-0">
+            <h6>Recent Actions</h6>
+            <p class="text-sm">
+                <i class="fa fa-clock text-info" aria-hidden="true"></i>
+                Latest admin activity
+            </p>
+        </div>
+        <div class="card-body p-3">
+            <div class="timeline timeline-one-side">
+                {% for action in recent_actions %}
+                <div class="timeline-block mb-3">
+                    <span class="timeline-step">
+                        <i class="material-symbols-rounded text-success text-gradient">
+                            {% if action.action_flag == "Added" %}
+                                add
+                            {% elif action.action_flag == "Changed" %}
+                                edit
+                            {% elif action.action_flag == "Deleted" %}
+                                delete
+                            {% else %}
+                                notifications
+                            {% endif %}
+                        </i>
+                    </span>
+                    <div class="timeline-content">
+                        <h6 class="text-dark text-sm font-weight-bold mb-0">
+                            {{ action.content_type }} - {{ action.object_repr }}
+                        </h6>
+                        <p class="text-secondary font-weight-bold text-xs mt-1 mb-0">
+                            {{ action.action_flag }} by {{ action.user }}
+                        </p>
+                        <p class="text-secondary text-xs mt-1 mb-0">
+                            {{ action.action_time|date:"d M Y, h:i A" }}
+                        </p>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="timeline-block mb-3">
+                    <span class="timeline-step">
+                        <i class="material-symbols-rounded text-muted text-gradient">notifications</i>
+                    </span>
+                    <div class="timeline-content">
+                        <h6 class="text-dark text-sm font-weight-bold mb-0">No recent activity</h6>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+      </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+// Fetch Weekly Orders
+fetch("{% url 'custom_admin:weekly_order_data' %}")
+  .then(response => response.json())
+  .then(data => {
+    new Chart(document.getElementById('weekly-order-chart'), {
+      type: 'bar',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: 'Orders',
+          data: data.data,
+          backgroundColor: 'rgba(54, 162, 235, 0.7)'
+        }]
+      }
+    });
+  });
+
+    // Daily Sales (Last 7 Days)
+    fetch("{% url 'custom_admin:daily_sales_data' %}")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('chart-line').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Sales',
+                        data: data.data,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+
+    // Monthly Sales (Jan–Dec)
+    fetch("{% url 'custom_admin:monthly_sales_data' %}")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('chart-line-tasks').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Monthly Sales',
+                        data: data.data,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+{% endblock %}

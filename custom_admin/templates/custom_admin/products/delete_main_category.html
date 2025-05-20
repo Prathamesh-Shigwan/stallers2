@@ -1,0 +1,19 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <h2 class="mb-3" style="color: #dc3545; text-align: center; font-weight: 600;">Delete Main Category</h2>
+    <p style="text-align: center; font-size: 18px; color: #343a40;">Are you sure you want to delete the category <strong>{{ category.title }}</strong>?</p>
+    <form method="POST" style="max-width: 600px; margin: 0 auto;">
+        {% csrf_token %}
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button type="submit" class="btn btn-danger" style="background-color: #dc3545; border-color: #dc3545; font-weight: bold; padding: 10px 20px;">
+                Confirm Delete
+            </button>
+            <a href="{% url 'custom_admin:main_categories' %}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; font-weight: bold; padding: 10px 20px; color: white; text-decoration: none;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

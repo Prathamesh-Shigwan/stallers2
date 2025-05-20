@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+{% block title %}FAQ{% endblock %}
+</head>
+<body>
+{% block content %}
+
+
+<section class="faq-section">
+  <h2 class="faq-title">Frequently Asked Questions</h2>
+  <div class="faq-container">
+
+    <div class="faq-item">
+      <div class="faq-question">What materials are Stellars handbags made of?</div>
+      <div class="faq-answer">Our handbags are crafted using premium vegan leather and sustainable materials.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Are Stellars bags made in India?</div>
+      <div class="faq-answer">Yes, Stellars bags are proudly designed and manufactured in India.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Do you offer Cash on Delivery (COD) services?</div>
+      <div class="faq-answer">Yes, we offer COD on all eligible orders across India.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Is shipping free on all orders?</div>
+      <div class="faq-answer">Yes, we offer free standard shipping on all orders!</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How long does delivery take?</div>
+      <div class="faq-answer">Delivery usually takes 3-7 business days depending on your location.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Can I return or exchange my order?</div>
+      <div class="faq-answer">Absolutely! You can return or exchange within 7 days of delivery.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I care for my Stellars handbag?</div>
+      <div class="faq-answer">Simply wipe gently with a soft damp cloth. Avoid exposing to direct sunlight for long periods.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Are Stellars products eco-friendly?</div>
+      <div class="faq-answer">Yes, we prioritize sustainable practices and eco-conscious materials.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">Do you have a physical store?</div>
+      <div class="faq-answer">Currently, we are an online-only brand. Stay tuned for store launches!</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question">How do I contact customer support?</div>
+      <div class="faq-answer">You can email us at support@Stellars.com or use the chat option on our website.</div>
+    </div>
+
+  </div>
+</section>
+
+
+<style>
+/* FAQ Section Styling */
+.faq-section {
+  padding: 50px 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.faq-title {
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 40px;
+  font-weight: 700;
+  color: #333;
+}
+
+.faq-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.faq-item {
+  border-bottom: 1px solid #ddd;
+  padding: 15px 0;
+  cursor: pointer;
+}
+
+.faq-question {
+  font-size: 18px;
+  font-weight: 600;
+  position: relative;
+  padding-right: 30px;
+}
+
+.faq-question::after {
+  content: '+';
+  position: absolute;
+  right: 0;
+  font-size: 22px;
+  transition: transform 0.3s ease;
+}
+
+.faq-item.active .faq-question::after {
+  content: '-';
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  transition: max-height 0.4s ease, margin-top 0.4s ease;
+  margin-top: 0;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 500px;
+  margin-top: 10px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .faq-title {
+    font-size: 26px;
+  }
+  .faq-question {
+    font-size: 16px;
+  }
+  .faq-answer {
+    font-size: 14px;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const faqItems = document.querySelectorAll('.faq-item');
+
+  faqItems.forEach(item => {
+    item.addEventListener('click', () => {
+      item.classList.toggle('active');
+
+      // If you want only one open at a time:
+      faqItems.forEach(otherItem => {
+        if (otherItem !== item) {
+          otherItem.classList.remove('active');
+        }
+      });
+    });
+  });
+});
+</script>
+
+
+{% endblock %}
+</body>
+</html>

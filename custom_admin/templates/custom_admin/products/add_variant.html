@@ -1,0 +1,168 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<style>
+    .custom-file-upload {
+        display: inline-block;
+        padding: 8px 16px;
+        cursor: pointer;
+        background-color: #e0e0e0;
+        color: #333;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .styled-input input,
+    .styled-input textarea,
+    .styled-input select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    .styled-input {
+        margin-bottom: 20px;
+    }
+
+    .progress-bar {
+        width: 0;
+        height: 8px;
+        background-color: #28a745;
+        transition: width 0.4s ease;
+        margin-top: 4px;
+        border-radius: 4px;
+    }
+
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+</style>
+
+<div class="container mt-4" style="max-width: 800px;">
+    <h2 class="mb-4 text-center fw-bold">Add Product Variant</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger">Form Errors: {{ form.errors }}</div>
+        {% endif %}
+        {% if formset.errors %}
+            <div class="alert alert-warning">Image Form Errors: {{ formset.errors }}</div>
+        {% endif %}
+        {% if size_formset.errors %}
+            <div class="alert alert-warning">Size Option Errors: {{ size_formset.errors }}</div>
+        {% endif %}
+
+        <div class="form-section">
+            <div class="styled-input"><label>Product</label>{{ form.product }}</div>
+            <div class="styled-input"><label>Color</label>{{ form.color }}</div>
+            <div class="styled-input"><label>Gender</label>{{ form.gender }}</div>
+
+            <div class="styled-input">
+                <label for="id_image" class="custom-file-upload">Choose Image</label>
+                {{ form.image }}
+                <small id="image-label" class="form-text text-muted">Not selected</small>
+            </div>
+
+            <div class="styled-input">
+                <label for="id_video" class="custom-file-upload">Choose Video</label>
+                {{ form.video }}
+                <small id="video-label" class="form-text text-muted">Not selected</small>
+                <div class="progress-bar" id="videoProgressBar"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Size Options</h4>
+            {{ size_formset.management_form }}
+            {% for form in size_formset %}
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3 styled-input"><label>Size</label>{{ form.size }}</div>
+                    <div class="col-md-3 styled-input"><label>Price</label>{{ form.price }}</div>
+                    <div class="col-md-3 styled-input"><label>Old Price</label>{{ form.old_price }}</div>
+                    <div class="col-md-3 styled-input"><label>Stock</label>{{ form.stock_quantity }}</div>
+                    {% if form.DELETE %}
+                    <div class="col-12">
+                        <div class="form-check">{{ form.DELETE }} <label class="form-check-label">Delete</label></div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-section">
+            <h4>Extra Images</h4>
+            {{ image_formset.management_form }}
+            {% for form in image_formset %}
+                <div class="styled-input">
+                    <label class="custom-file-upload" for="{{ form.image.id_for_label }}">Choose Extra Image</label>
+                    {{ form.image }}
+                    <br><small class="extra-image-label text-muted">Not selected</small>
+                    {% if form.DELETE %}
+                    <div class="form-check mt-2">{{ form.DELETE }} <label class="form-check-label">Delete</label></div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-success">Save Variant</button>
+            <a href="{% url 'custom_admin:variant_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const updateLabel = (input, labelId) => {
+        const label = document.getElementById(labelId);
+        if (input.files.length && label) {
+            label.textContent = input.files[0].name;
+        }
+    };
+
+    const imageInput = document.getElementById('id_image');
+    if (imageInput) {
+        imageInput.style.display = 'none';
+        imageInput.addEventListener('change', () => updateLabel(imageInput, 'image-label'));
+    }
+
+    const videoInput = document.getElementById('id_video');
+    const videoBar = document.getElementById('videoProgressBar');
+    if (videoInput) {
+        videoInput.style.display = 'none';
+        videoInput.addEventListener('change', () => {
+            updateLabel(videoInput, 'video-label');
+            videoBar.style.width = '0%';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                videoBar.style.width = `${progress}%`;
+                if (progress >= 100) clearInterval(interval);
+            }, 200);
+        });
+    }
+
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        const label = input.closest('div')?.querySelector('.extra-image-label');
+        if (label && input.id.includes('image') && !['id_image'].includes(input.id)) {
+            input.addEventListener('change', () => {
+                label.textContent = input.files.length ? input.files[0].name : 'Not selected';
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

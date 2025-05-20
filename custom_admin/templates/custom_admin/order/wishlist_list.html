@@ -1,0 +1,62 @@
+{% extends "custom_admin/base_site.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Wishlist</h2>
+    <a href="{% url 'custom_admin:add_wishlist' %}" class="btn btn-success mb-3">Add Wishlist</a>
+
+    <!-- Filters -->
+    <form method="get" class="mb-4">
+        <div class="row justify-content-center">
+            <div class="col-md-2">
+                <input type="text" name="search" class="form-control border border-secondary" placeholder="Search by name" value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="start_date" class="form-control border border-secondary" placeholder="Start Date" value="{{ start_date }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="end_date" class="form-control border border-secondary" placeholder="End Date" value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Product</th>
+                <th>Product Image</th>
+                <th>Date Added</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for wishlist in wishlists %}
+            <tr>
+                <td>{{ wishlist.user.username|default:"No User" }}</td>
+                <td>{{ wishlist.product.name|default:"No Product" }}</td>
+                <td>
+                    {% if wishlist.product.image %}
+                        <img src="{{ wishlist.product.image.url }}" alt="{{ wishlist.product.name }}" width="50" height="50">
+                    {% else %}
+                        No Image
+                    {% endif %}
+                </td>
+                <td>{{ wishlist.date }}</td>
+                <td>
+                    <a href="{% url 'custom_admin:edit_wishlist' wishlist.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'custom_admin:delete_wishlist' wishlist.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No items in the wishlist.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

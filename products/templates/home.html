@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+{% block title %}Home{% endblock %}
+</head>
+<body>
+{% block content %}
+
+        <!-- End Offset Wrapper -->
+{% if not request.user.is_authenticated %}
+<!-- Discount Popup -->
+<div id="discountPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+  <div style="background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 10px; text-align: center; position: relative;">
+    <button id="closePopup" style="position: absolute; right: 15px; top: 15px; border: none; background: none; font-size: 20px;">&times;</button>
+    <img src="{% static 'your_logo.png' %}" alt="Logo" style="width: 80px; margin-bottom: 20px;">
+    <h2 style="font-weight: 600;">Get 10% OFF your first order</h2>
+    <p>Sign up and unlock your instant discount.</p>
+    <form id="discountForm" style="margin-top: 20px;">
+      {% csrf_token %}
+      <input type="text" name="name" placeholder="Name" required style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px;">
+
+      <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+        <span style="display: flex; align-items: center; padding: 0 10px; background: #eee; border: 1px solid #ccc; border-radius: 5px;">🇮🇳 +91</span>
+        <input type="text" name="phone" placeholder="Phone Number" required maxlength="10" pattern="[0-9]{10}" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+      </div>
+
+      <input type="email" name="email" placeholder="Email address" required style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px;">
+
+      <button type="submit" style="width: 100%; padding: 10px; background: black; color: white; border: none; border-radius: 5px; font-weight: 600;">Claim discount</button>
+    </form>
+    <a href="#" id="noThanks" style="display: block; margin-top: 20px; color: #888;">No, thanks</a>
+    <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+      You are signing up to receive communication via email and can unsubscribe at any time.
+    </p>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const popup = document.getElementById('discountPopup');
+    const closePopup = document.getElementById('closePopup');
+    const noThanks = document.getElementById('noThanks');
+    const discountForm = document.getElementById('discountForm');
+
+    if (!sessionStorage.getItem('popupShown')) {
+      setTimeout(() => {
+        popup.style.display = 'flex';
+        sessionStorage.setItem('popupShown', 'true');
+      }, 3000);
+    }
+
+    closePopup.addEventListener('click', () => popup.style.display = 'none');
+    noThanks.addEventListener('click', (e) => {
+      e.preventDefault();
+      popup.style.display = 'none';
+    });
+
+    discountForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(discountForm);
+
+      fetch("{% url 'products:claim_discount' %}", {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Thank you! Your coupon has been emailed to you.');
+          popup.style.display = 'none';
+        } else {
+          alert('Error: ' + data.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Something went wrong!');
+      });
+    });
+  });
+</script>
+{% endif %}
+
+
+
+<div class="slider">
+    <div class="slide-track">
+        {% for banner in banner_images %}
+            <div class="slide">
+                <img src="{{ banner.image.url }}" alt="{{ banner.title|default:'Banner Image' }}">
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .slider {
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+        height: 500px;
+    }
+
+    .slide-track {
+        display: flex;
+        min-width: 100%;
+        animation: scroll 80s linear infinite;
+        height: 100%;
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-100%);
+        }
+    }
+
+    .slide {
+        flex: 0 0 auto;
+        width: 20%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: 0;
+    }
+
+    .slide img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        padding: 0;
+        margin: 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .slider {
+            height: 300px;
+        }
+
+        .slide {
+            width: 50%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .slider {
+            height: auto; /* Auto height */
+            aspect-ratio: 1/1; /* Square aspect ratio */
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensures full image is visible */
+        }
+
+        .slide-track {
+            animation: scroll 60s linear infinite;
+            gap: 0;
+        }
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    const $slider = $('.slider');
+    const $track = $('.slide-track');
+    const $slides = $track.children();
+
+    // Clone slides to ensure continuous loop
+    $slides.clone().appendTo($track);
+
+    // Touch swipe support for manual control
+    let startX;
+    let isManualScrolling = false;
+
+    $slider.on('touchstart', function(event) {
+        startX = event.originalEvent.touches[0].pageX;
+        // Pause the animation while manually scrolling
+        $track.css('animation-play-state', 'paused');
+        isManualScrolling = true;
+    });
+
+    $slider.on('touchmove', function(event) {
+        if (!isManualScrolling) return;
+
+        const endX = event.originalEvent.touches[0].pageX;
+        const moveX = startX - endX;
+        $slider.scrollLeft($slider.scrollLeft() + moveX);
+        startX = endX;
+    });
+
+    $slider.on('touchend', function() {
+        // Resume animation after touch ends
+        $track.css('animation-play-state', 'running');
+        isManualScrolling = false;
+    });
+});
+</script>
+        <!-- Start Slider Area -->
+        <!-- Start Category Area -->
+<section class="htc__category__area pt--70 pb--100">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="section__title--2">
+                    <h2 class="title__line">Our Categories</h2>
+                    <p># Trending This Season</p>
+                </div>
+            </div>
+        </div>
+        <div class="htc__product__container">
+            <div class="row">
+                <div class="product__list clearfix mt--30">
+                    {% for sub_category in sub_categories %}
+                    <!-- Start Single Subcategory -->
+                    <div class="col-md-4 col-lg-4 col-sm-6 col-xs-12 single__pro">
+                        <div class="category">
+                            <div class="ht__cat__thumb">
+                                <a href="{% url 'products:product_grid_by_sub_category' sub_category.sid %}">
+                                    {% if sub_category.image %}
+                                        <img src="{{ sub_category.image.url }}" alt="subcategory image">
+                                    {% else %}
+                                        <img src="{% static 'img/default-placeholder.png' %}" alt="No image available">
+                                    {% endif %}
+                                </a>
+
+                            </div>
+                            <div class="cat__hover__info">
+                                <div class="cat__hover__inner">
+                                    <h2><a href="{% url 'products:product_details' %}">{{ sub_category.title }}</a></h2>
+                                    <span>{{ sub_category.price }} &#8377;</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Single Subcategory -->
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+        <!-- End Category Area -->
+        <!-- Start Prize Good Area -->
+        <!-- End Prize Good Area -->
+        <!-- Start Product Area -->
+<!--        <section class="htc__product__area pb&#45;&#45;70">-->
+<!--            <div class="container">-->
+<!--                <div class="row">-->
+<!--                    <div class="col-xs-12">-->
+<!--                        <div class="section__title text&#45;&#45;left">-->
+<!--                            <h2 class="title__line title__border">New Arrivals</h2>-->
+<!--                            <p># Trending This Season</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="row">-->
+<!--                    <div class="product__wrap activation__style&#45;&#45;1 owl-carousel owl-theme clearfix">-->
+<!--                        &lt;!&ndash; Start Single Product &ndash;&gt;-->
+<!--                        {% for p in products %}-->
+<!--                        <div class="col-md-3 col-lg-3 col-sm-6 col-xs-12">-->
+<!--                            <div class="product">-->
+<!--                                <div class="product__thumb">-->
+<!--                                    <a href="{% url 'products:product_details' %}">-->
+<!--                                        &lt;!&ndash; Assuming 'image' is an ImageField in your Product model &ndash;&gt;-->
+<!--                                        <img src="{{ p.image.url }}" alt="{{ p.title }}">-->
+<!--                                    </a>-->
+<!--                                    <div class="product__offer">-->
+<!--                                        <span class="new">new</span>-->
+<!--                                        &lt;!&ndash; Example of showing a discount, adjust as necessary &ndash;&gt;-->
+<!--                                        <span>{{ p.get_percentage| floatformat }}</span>-->
+<!--                                    </div>-->
+<!--                                    <div class="product__hover__info">-->
+<!--                                        <ul class="product__action">-->
+<!--                                            <li><a href="{% url 'products:wishlist' %}"><i class="icon-heart icons"></i></a></li>-->
+<!--                                            <li><a href="{% url 'products:cart_view' %}"><i class="icon-handbag icons"></i></a></li>-->
+<!--                                            <li><a href="#"><i class="icon-shuffle icons"></i></a></li>-->
+<!--                                        </ul>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                                <div class="product__inner">-->
+<!--                                    <div class="product__details">-->
+<!--                                        <h2><a href="{% url 'products:product_details'%}">{{ p.title }}</a></h2>-->
+<!--                                        <ul class="pro__prize">-->
+<!--                                            &lt;!&ndash; Displaying product price, adjust as needed &ndash;&gt;-->
+<!--                                            <li class="old__prize">&#8377; {{ p.old_price }}</li>-->
+<!--                                            <li>&#8377; {{ p.price }}</li>-->
+<!--                                        </ul>-->
+<!--                                    </div>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        {% endfor %}-->
+<!--                        &lt;!&ndash; End Single Product &ndash;&gt;-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </section>-->
+        <!-- End Product Area -->
+        <!-- Start Testimonial Area -->
+<br>
+<br>
+<br>
+<section class="htc__product__area pb--70">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="section__title text--left">
+                    <h2 class="title__line title__border">New Arrivals</h2>
+                    <p># Trending This Season</p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="product__wrap activation__style--1 owl-carousel owl-theme clearfix">
+                <!-- Start Single Product -->
+{% for p in products %}
+    {% with v=p.first_variant s=p.first_size d=p.first_discount %}
+    {% if v and s %}
+    <div class="col-md-3 col-lg-3 col-sm-6 col-xs-12">
+        <div class="product">
+            <div class="product__thumb">
+                <a href="{% url 'products:product_details' p.pid %}">
+                    <img src="{{ v.image.url }}" alt="{{ p.name }}">
+                </a>
+
+                {% if d %}
+                <div class="product__offer">
+                    <div style="
+                        background-color: #000;
+                        color: #fff;
+                        display: inline-block;
+                        padding: 5px 12px;
+                        border-radius: 20px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        text-align: center;">
+                        {{ d }}% OFF
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="product__hover__info">
+                    <ul class="product__action">
+                        <li class="add-to-wishlist" data-product-id="{{ p.id }}">
+                            <a><i class="icon-heart icons"></i></a>
+                        </li>
+                        <li class="ht__addto__cart">
+                            <button class="add-to-cart-btn"
+                                    data-pid="{{ p.pid }}"
+                                    data-variant-id="{{ v.id }}"
+                                    data-size="{{ s.size }}"
+                                    data-url="{% url 'products:add_to_cart' p.pid %}">
+                                <a><i class="icon-handbag icons"></i></a>
+                            </button>
+                        </li>
+                        <li><a href="#"><i class="icon-shuffle icons"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="product__inner">
+                <div class="product__details">
+                    <h2 style="color: black; font-size: 15px; font-weight: 600; margin: 10px 0;">
+                        <a href="{% url 'products:product_details' p.pid %}">{{ p.name }}</a>
+                    </h2>
+                    <ul style="display: flex; align-items: center; gap: 10px; list-style: none; padding: 0; margin: 5px 0;">
+                        {% if s.old_price %}
+                        <li style="text-decoration: line-through; color: #999;">&#8377; {{ s.old_price }}</li>
+                        {% endif %}
+                        <li style="font-weight: bold; color: black;">&#8377; {{ s.price }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+{% endfor %}
+
+
+                <!-- End Single Product -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CSRF token meta -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Scripts -->
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    $(document).ready(function () {
+        let wishlistProcessing = false;
+        let cartProcessing = false;
+
+        // Wishlist Functionality
+        $(document).on("click", ".add-to-wishlist", function (e) {
+            e.preventDefault();
+            if (wishlistProcessing) return;
+            wishlistProcessing = true;
+
+            const productId = $(this).data("product-id");
+            const thisElement = $(this);
+
+            $.ajax({
+                url: "{% url 'products:add_to_wishlist' %}",
+                type: "POST",
+                data: {
+                    id: productId,
+                    csrfmiddlewaretoken: $('meta[name="csrf-token"]').attr('content')
+                },
+                dataType: "json",
+                success: function (response) {
+                    wishlistProcessing = false;
+                    if (response.bool) {
+                        thisElement.html("<a><i class='fa fa-check-square' aria-hidden='true'></i></a>");
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function () {
+                    wishlistProcessing = false;
+                    alert("Error adding to wishlist.");
+                }
+            });
+        });
+
+        // Add to Cart Functionality (Handles variant and size if provided)
+        $(document).on("click", ".add-to-cart-btn", function (e) {
+            e.preventDefault();
+            if (cartProcessing) return;
+            cartProcessing = true;
+
+            const productId = $(this).data("pid");
+            const variantId = $(this).data("variant-id") || null;
+            const size = $(this).data("size") || null;
+            const url = $(this).data("url");
+
+            const payload = {
+                product_id: productId,
+                quantity: 1
+            };
+
+            if (variantId) {
+                payload.variant_id = variantId;
+            }
+
+            if (size) {
+                payload.size = size;
+            }
+
+            $.ajax({
+                url: url,
+                type: "POST",
+                data: JSON.stringify(payload),
+                contentType: "application/json",
+                headers: {
+                    "X-CSRFToken": getCookie("csrftoken")
+                }
+            })
+            .done(function (data) {
+                if (data.success) {
+                    alert("Product added to cart. Total items: " + data.total_items);
+                } else {
+                    alert("Failed to add to cart: " + (data.error || "Unknown error"));
+                }
+            })
+            .fail(function (xhr, status, error) {
+                console.error("Request failed:", error);
+                alert("Error adding to cart. Server returned: " + xhr.responseText);
+            })
+            .always(function () {
+                cartProcessing = false;
+            });
+        });
+    });
+</script>
+</section>
+
+
+
+
+        <section class="htc__testimonial__area bg__white">
+    <div class="container">
+        <div class="row">
+                    <div class="col-xs-12">
+                        <div class="section__title text--left">
+                            <h2 class="title__line title__border">Our Blogs</h2>
+
+                        </div>
+                    </div>
+                </div>
+        <div class="row">
+            <div class="ht__testimonial__activation clearfix">
+                {% for blog in blogs %}
+                <!-- Start Single Blog as Testimonial -->
+                <div class="col-lg-6 col-md-6 single__tes">
+                    <div class="testimonial">
+                        <div class="testimonial__thumb">
+                            {% if blog.image %}
+                                <img src="{{ blog.image.url }}" alt="{{ blog.title }}">
+                            {% else %}
+                                <img src="{% static 'images/default_blog_image.png' %}" alt="Default Blog Image">
+                            {% endif %}
+                            <span class="quote"><img src="{% static 'images/others/shape/quote.png' %}" alt="quote"></span>
+                        </div>
+                        <div class="testimonial__details">
+                            <h4><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h4>
+                            <p>{{ blog.content|striptags|truncatewords:20 }}</p>
+ <!-- Display a short preview -->
+                        </div>
+                    </div>
+                </div>
+                <!-- End Single Blog as Testimonial -->
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+        <!-- End Testimonial Area -->
+
+        <!-- Start Brand Area -->
+      <!--  <div class="htc__brand__area pb--70 bg__white">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="ht__brand__inner">
+                            <ul class="brand__list owl-carousel clearfix">
+                                <li><a href="#"><img src="{% static 'images/brand/1.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/2.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/3.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/4.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/5.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/5.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/1.png' %}" alt="brand images"></a></li>
+                                <li><a href="#"><img src="{% static 'images/brand/2.png' %}" alt="brand images"></a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>-->
+        <!-- End Brand Area -->
+        <!-- Start Banner Area -->
+
+<br>
+<br>
+        <!-- End Banner Area -->
+        <!-- End Banner Area -->
+
+
+
+
+{% endblock %}
+</body>
+</html>
+
+
+
+
+

@@ -1,0 +1,39 @@
+{% extends 'custom_admin/base_site.html' %}
+{% load static custom_filters %}
+{% block content %}
+
+<div class="p-6 bg-white shadow rounded-lg">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-semibold">Site Settings</h2>
+        <a href="{% url 'custom_admin:site_settings_create' %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+            Add New Settings
+        </a>
+    </div>
+    <table class="min-w-full divide-y divide-gray-200 border">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">ID</th>
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Shipping Charge</th>
+                <th class="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for item in settings %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-900">{{ item.id }}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">{{ item.shipping_charge }}</td>
+                <td class="px-6 py-4 text-sm">
+                    <a href="{% url 'custom_admin:site_settings_update' item.pk %}" class="text-blue-600 hover:underline mr-3">Edit</a>
+                    <a href="{% url 'custom_admin:site_settings_delete' item.pk %}" class="text-red-600 hover:underline">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="px-6 py-4 text-center text-gray-500">No settings found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
