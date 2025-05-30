@@ -17,8 +17,12 @@ urlpatterns = [
     path('api/daily-sales/', views.daily_sales_data, name='daily_sales_data'),  # Daily sales API
     path('api/weekly-orders/', views.weekly_order_data, name='weekly_order_data'),
     path('api/monthly-sales/', views.monthly_sales_data, name='monthly_sales_data'),
+
     path('login/', LoginView.as_view(template_name='admin/login.html'), name='admin_login'),
     path('logout/', LogoutView.as_view(), name='admin_logout'),
+
+    path('media-library/', views.media_library_view, name='media_library'),
+    path('media-library/delete/<int:pk>/', views.delete_media_file, name='delete_media'),
 
     path('main-categories/', main_categories_view, name='main_categories'),
     path('main-categories/add/', add_main_category_view, name='add_main_category'),

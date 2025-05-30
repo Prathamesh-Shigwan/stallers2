@@ -57,6 +57,15 @@
                                     </div>
                                 </div>
 
+                                <!-- Checkbox for copying billing to shipping -->
+                                <div class="col-md-12">
+                                    <label style="display: flex; align-items: center; margin: 15px 0;">
+                                        <input type="checkbox" id="sameAsBilling" style="margin-right: 10px;">
+                                        Shipping address is same as billing address
+                                    </label>
+                                </div>
+                                <input type="hidden" name="same_as_billing" id="same_as_billing_input">
+
                                 <div class="accordion__title">Shipping Information</div>
                                 <div class="accordion__body" style="margin-bottom: 30px;">
                                     <div class="shipinfo">
@@ -106,7 +115,6 @@
             </div>
             <div class="single-item__content" style="flex: 1;">
                 <a href="#" style="font-weight: 600; font-size: 16px; color: #333;">{{ item.product.name }}</a>
-
                 {% if item.product_variant %}
                     <p style="margin: 5px 0; font-size: 14px; color: #666;">
                         Color: {{ item.product_variant.color }} |
@@ -119,9 +127,7 @@
                     </p>
                     <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">₹ {{ item.product.price }}</div>
                 {% endif %}
-
                 <div style="font-size: 14px; color: #888; margin-bottom: 5px;">x {{ item.quantity }}</div>
-
                 <div style="background: #f7f7f7; padding: 5px 10px; border-radius: 5px; font-size: 13px; color: #777;">
                     {% if item.product_variant %}
                         Including ₹ {{ item.product_variant.price|mul:0.18|floatformat:2 }} tax (18%)
@@ -133,7 +139,6 @@
         </div>
     </div>
 {% endfor %}
-
 
                     <div class="order-details__count" style="margin-top: 20px;">
                         <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
@@ -157,8 +162,6 @@
 
                     <!-- PAYMENT BUTTONS -->
                     <div class="row" style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
-
-                        <!-- Proceed to Payment -->
                         <form method="post" action="{% url 'products:checkout' %}" style="width: 100%; text-align: center;">
                             {% csrf_token %}
                             <input type="hidden" name="final_total" value="{{ final_total }}">
@@ -167,22 +170,39 @@
                             </button>
                         </form>
 
-                        <!-- Cash on Delivery -->
                         <form method="post" action="{% url 'products:place_order_cod' %}" style="width: 100%; text-align: center;">
                             {% csrf_token %}
                             <button type="submit" name="process_cod" style="background-color: #28a745; border: none; color: white; padding: 12px 30px; font-size: 16px; border-radius: 6px; width: 220px; font-weight: 600; cursor: pointer;">
                                 Cash on Delivery
                             </button>
                         </form>
-
                     </div>
-
                 </div>
             </div>
-
         </div>
     </div>
 </div>
-<!-- End Checkout Area -->
+
+<!-- JS to auto-fill shipping if same as billing -->
+<script>
+    const checkbox = document.getElementById('sameAsBilling');
+    const hiddenInput = document.getElementById('same_as_billing_input');
+
+    checkbox.addEventListener('change', function () {
+        hiddenInput.value = this.checked ? 'on' : '';
+
+        if (this.checked) {
+            document.getElementById('id_shipping_full_name').value = document.getElementById('id_billing_full_name').value;
+            document.getElementById('id_shipping_email').value = document.getElementById('id_billing_email').value;
+            document.getElementById('id_shipping_address1').value = document.getElementById('id_billing_address1').value;
+            document.getElementById('id_shipping_address2').value = document.getElementById('id_billing_address2').value;
+            document.getElementById('id_shipping_city').value = document.getElementById('id_billing_city').value;
+            document.getElementById('id_shipping_state').value = document.getElementById('id_billing_state').value;
+            document.getElementById('id_shipping_zipcode').value = document.getElementById('id_billing_zipcode').value;
+            document.getElementById('id_shipping_country').value = document.getElementById('id_billing_country').value;
+            document.getElementById('id_shipping_phone').value = document.getElementById('id_billing_phone').value;
+        }
+    });
+</script>
 
 {% endblock %}

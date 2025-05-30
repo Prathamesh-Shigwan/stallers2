@@ -160,6 +160,7 @@ class OrderForm(forms.ModelForm):
             'shipping_full_name', 'shipping_email', 'shipping_address1',
             'shipping_address2', 'shipping_city', 'shipping_state',
             'shipping_zipcode', 'shipping_country', 'shipping_phone',
+            'expected_delivery',
             'feedback_note'
         ]
         widgets = {

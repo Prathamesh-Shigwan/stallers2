@@ -60,6 +60,8 @@
       <li><a class="dropdown-item" href="{% url 'custom_admin:subcategories' %}">Sub Categories</a></li>
       <li><a class="dropdown-item" href="{% url 'custom_admin:product_list' %}">Products</a></li>
       <li><a class="dropdown-item" href="{% url 'custom_admin:variant_list' %}">Product Variants</a></li>
+      <li><a class="dropdown-item" href="{% url 'custom_admin:media_library' %}">Media Upload</a></li>
+
     </ul>
   </li>
 {% endif %}
@@ -119,10 +121,13 @@
   {% endif %}
   {% if user.is_authenticated %}
   <li class="nav-item">
-    <a class="nav-link text-dark" href="{% url 'custom_admin:admin_logout' %}">
-      <i class="material-symbols-rounded opacity-5">logout</i>
-      <span class="nav-link-text ms-1">Log Out</span>
-    </a>
+<form method="post" action="{% url 'custom_admin:admin_logout' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" class="nav-link text-dark bg-transparent border-0">
+        <i class="material-symbols-rounded opacity-5">logout</i>
+        <span class="nav-link-text ms-1">Log Out</span>
+    </button>
+</form>
   </li>
   {% endif %}
 </ul>

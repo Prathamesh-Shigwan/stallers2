@@ -362,12 +362,13 @@ window.addEventListener('DOMContentLoaded', () => {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (!addToCartBtn) return;
 
     addToCartBtn.addEventListener('click', function () {
         const productId = this.dataset.pid;
-        const variantId = document.getElementById('selectedVariantId').value;
-        const size = document.getElementById('selected-size-hidden').value;
-        const quantity = document.getElementById('product-quantity').value;
+        const variantId = document.getElementById('selectedVariantId')?.value || null;
+        const size = document.getElementById('selected-size-hidden')?.value || null;
+        const quantity = document.getElementById('product-quantity')?.value || 1;
 
         if (!size) {
             alert('Please select a size before adding to cart.');
@@ -390,6 +391,20 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // ✅ Update cart count badge
+                const cartBadge = document.querySelector('.cart-count-badge');
+                if (cartBadge) {
+                    cartBadge.textContent = data.total_items;
+                } else {
+                    const icon = document.querySelector('.icon-handbag');
+                    if (icon) {
+                        const badge = document.createElement('span');
+                        badge.className = 'cart-count-badge';
+                        badge.textContent = data.total_items;
+                        icon.parentElement.appendChild(badge);
+                    }
+                }
+
                 alert('Product added to cart successfully!');
             } else {
                 alert(data.error || 'Something went wrong while adding to cart.');
@@ -402,6 +417,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+
 
 
 {% endblock %}

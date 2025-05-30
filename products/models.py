@@ -1,6 +1,13 @@
 # product/models.py
+import os
+from datetime import timedelta
+
+import shortuuid
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.db import models
+from django.utils.timezone import now
 from multiselectfield import MultiSelectField
 from shortuuid.django_fields import ShortUUIDField
 from django.utils.html import mark_safe
@@ -17,11 +24,12 @@ STATUS_CHOICES = {
 }
 
 STATUS = {
+    ('published', 'Published'),
     ('draft', 'Draft'),
     ('disabled', 'Disabled'),
     ('rejected', 'Rejected'),
     ('in_review', 'IN Review'),
-    ('published', 'Published'),
+
 }
 
 RATING = {
@@ -31,6 +39,17 @@ RATING = {
     (4, "★★★★✩"),
     (5, "★★★★★")
 }
+
+def delete_file_if_exists(file_field):
+    """Delete a file from the filesystem only if it exists and is not a default/dummy."""
+    if file_field and hasattr(file_field, 'path') and os.path.isfile(file_field.path):
+        try:
+            os.remove(file_field.path)
+        except Exception as e:
+            print(f"Error deleting file: {e}")
+
+def default_expected_delivery():
+    return now().date() + timedelta(days=7)
 
 def user_directory_path(instance, filename):
     # Check if the instance has a direct user attribute
@@ -49,6 +68,46 @@ def category_directory_path(instance, filename):
 
 def supplier_directory_path(instance, filename):
     return 'supplier_{0}/{1}'.format(instance.Vid, filename)
+
+
+# Image cleanup signals
+@receiver(post_delete, sender='products.MainCategory')
+def delete_maincategory_image(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.SubCategory')
+def delete_subcategory_image(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.Supplier')
+def delete_supplier_image(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.ProductVariant')
+def delete_variant_files(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+    delete_file_if_exists(instance.video)
+
+@receiver(post_delete, sender='products.ExtraImages')
+def delete_extra_images(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.VariantExtraImage')
+def delete_variant_extra_images(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.About')
+def delete_about_image(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.BannerImage')
+def delete_banner_image(sender, instance, **kwargs):
+    delete_file_if_exists(instance.image)
+
+@receiver(post_delete, sender='products.MediaLibrary')
+def delete_media_file(sender, instance, **kwargs):
+    delete_file_if_exists(instance.file)
+
 
 class MainCategory(models.Model):
     cid = ShortUUIDField(unique=True, length=10, max_length=30, prefix="cat", alphabet="abcdefghijklmnop1234567890")
@@ -150,7 +209,7 @@ class Product(models.Model):
     url = models.URLField(null=True, blank=True)
     specification = models.TextField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    product_status = models.CharField(choices=STATUS, max_length=10, default="in_review")
+    product_status = models.CharField(choices=STATUS, max_length=10, default="published")
     status = models.BooleanField(default=True)
     in_stock = models.BooleanField(default=True)
     featured = models.BooleanField(default=False)
@@ -225,10 +284,10 @@ class DiscountCode(models.Model):
     valid_to = models.DateTimeField()
     active = models.BooleanField(default=True)
     min_spend = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    used_by = models.ManyToManyField(User, blank=True, related_name='used_coupons')
 
     usage_limit = models.IntegerField(null=True, blank=True)
     per_user_limit = models.IntegerField(null=True, blank=True)
-    used_by = models.ManyToManyField(User, blank=True, related_name='used_coupons')
 
     applicable_products = models.ManyToManyField('Product', blank=True)
     applicable_categories = models.ManyToManyField('SubCategory', blank=True)
@@ -441,6 +500,8 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    order_id = models.CharField(max_length=8, unique=True, blank=True, editable=False)
+    expected_delivery = models.DateField(default=default_expected_delivery)
 
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # ✅ New Field
     discount_code = models.CharField(max_length=100, blank=True, null=True)  # ✅ New Field
@@ -480,6 +541,10 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=50, blank=True, null=True)
     feedback_note = models.TextField(blank=True, null=True, help_text="Feedback for cancel, return, or replace requests")
 
+    def save(self, *args, **kwargs):
+        if not self.order_id:
+            self.order_id = shortuuid.ShortUUID().random(length=8).upper()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Order {self.id} - {self.user.username}'
@@ -534,3 +599,15 @@ class DiscountLead(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class MediaLibrary(models.Model):
+    file = models.FileField(upload_to='uploads/media_library/')
+    name = models.CharField(max_length=255, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            self.name = os.path.basename(self.file.name)
+        super().save(*args, **kwargs)
+
+

@@ -68,13 +68,23 @@
             {% for field in form %}
                 <div class="form-group">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {% if "email" in field.name %}
+
+                    {% if field.name == "order_id" %}
+                        <input type="text" name="{{ field.name }}" value="{{ field.value }}" class="form-control" readonly />
+
+                    {% elif field.field.widget.input_type == "email" or "email" in field.name %}
                         <input type="email" name="{{ field.name }}" value="{{ field.value }}" class="form-control" />
+
+                    {% elif field.name == "expected_delivery" %}
+                        <input type="date" name="{{ field.name }}" value="{{ field.value|date:'Y-m-d' }}" class="form-control" />
+
                     {% elif "address" in field.name or field.name == "feedback_note" %}
                         <textarea name="{{ field.name }}" class="form-control">{{ field.value }}</textarea>
+
                     {% else %}
                         {{ field }}
                     {% endif %}
+
                     {% if field.help_text %}
                         <small class="form-text text-muted">{{ field.help_text }}</small>
                     {% endif %}

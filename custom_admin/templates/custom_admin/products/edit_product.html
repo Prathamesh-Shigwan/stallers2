@@ -83,7 +83,7 @@
 </style>
 
 <div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Add Product</h2>
+    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Edit Product</h2>
     <form method="POST" enctype="multipart/form-data" style="max-width: 800px; margin: 0 auto;">
         {% csrf_token %}
 
@@ -91,21 +91,6 @@
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Name</label>{{ form.name }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Title</label>{{ form.title }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Description</label>{{ form.description }}</div>
-
-        <div class="border p-3 rounded mb-3 styled-input">
-            <label class="form-label">Image</label><br>
-            <label for="id_image" class="custom-file-upload">Choose Image</label>
-            {{ form.image }}
-            <br><small id="image-label">Not selected</small>
-        </div>
-
-        <div class="border p-3 rounded mb-3 styled-input">
-            <label class="form-label">Product Video</label><br>
-            <label for="id_video" class="custom-file-upload">Choose Video</label>
-            {{ form.video }}
-            <br><small id="video-label">Not selected</small>
-        </div>
-
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Specification</label>{{ form.specification }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">User</label>{{ form.user }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Main Category</label>{{ form.main_category }}</div>
@@ -152,32 +137,16 @@
         </div>
 
         <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-success">Add Product</button>
+            <button type="submit" class="btn btn-primary">Update Product</button>
             <a href="{% url 'custom_admin:product_list' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </form>
 </div>
 
 <script>
-    const imageInput = document.getElementById('id_image');
-    const imageLabel = document.getElementById('image-label');
-    if (imageInput) {
-        imageInput.addEventListener('change', () => {
-            imageLabel.textContent = imageInput.files.length ? imageInput.files[0].name : 'Not selected';
-        });
-    }
-
-    const videoInput = document.getElementById('id_video');
-    const videoLabel = document.getElementById('video-label');
-    if (videoInput) {
-        videoInput.addEventListener('change', () => {
-            videoLabel.textContent = videoInput.files.length ? videoInput.files[0].name : 'Not selected';
-        });
-    }
-
     document.querySelectorAll('input[type="file"]').forEach(input => {
         const label = input.closest('div').querySelector('.extra-image-label');
-        if (label && input.id.includes('image') && !['id_image'].includes(input.id)) {
+        if (label && input.id.includes('image')) {
             input.addEventListener('change', () => {
                 label.textContent = input.files.length ? input.files[0].name : 'Not selected';
             });

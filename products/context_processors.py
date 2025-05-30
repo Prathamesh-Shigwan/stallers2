@@ -3,15 +3,14 @@ from .models import MainCategory
 
 
 def cart_context(request):
+    item_count = 0
     if request.user.is_authenticated:
-        cart, _ = Cart.objects.get_or_create(user=request.user, defaults={'total': 0})
-        item_count = CartItem.objects.filter(cart=cart).count()
-    else:
-        item_count = 0
-
-    return {
-        'item_count': item_count
-    }
+        try:
+            cart = Cart.objects.get(user=request.user)
+            item_count = cart.cartitem_set.count()
+        except Cart.DoesNotExist:
+            item_count = 0
+    return {'item_count': item_count}
 
 
 

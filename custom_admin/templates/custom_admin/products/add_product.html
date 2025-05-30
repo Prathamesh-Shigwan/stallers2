@@ -91,9 +91,6 @@
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Name</label>{{ form.name }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Title</label>{{ form.title }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Description</label>{{ form.description }}</div>
-
-
-
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Specification</label>{{ form.specification }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">User</label>{{ form.user }}</div>
         <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Main Category</label>{{ form.main_category }}</div>
@@ -147,25 +144,9 @@
 </div>
 
 <script>
-    const imageInput = document.getElementById('id_image');
-    const imageLabel = document.getElementById('image-label');
-    if (imageInput) {
-        imageInput.addEventListener('change', () => {
-            imageLabel.textContent = imageInput.files.length ? imageInput.files[0].name : 'Not selected';
-        });
-    }
-
-    const videoInput = document.getElementById('id_video');
-    const videoLabel = document.getElementById('video-label');
-    if (videoInput) {
-        videoInput.addEventListener('change', () => {
-            videoLabel.textContent = videoInput.files.length ? videoInput.files[0].name : 'Not selected';
-        });
-    }
-
     document.querySelectorAll('input[type="file"]').forEach(input => {
         const label = input.closest('div').querySelector('.extra-image-label');
-        if (label && input.id.includes('image') && !['id_image'].includes(input.id)) {
+        if (label && input.id.includes('image')) {
             input.addEventListener('change', () => {
                 label.textContent = input.files.length ? input.files[0].name : 'Not selected';
             });

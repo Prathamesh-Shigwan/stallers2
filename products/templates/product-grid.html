@@ -413,10 +413,11 @@ function getCookie(name) {
 $(document).ready(function () {
     $(document).on('click', '.add-to-cart-btn', function (e) {
         e.preventDefault();
+
         const button = $(this);
         const productId = button.data('pid');
-        const variantId = button.data('variant-id');
-        const size = button.data('size');
+        const variantId = button.data('variant-id') || null;
+        const size = button.data('size') || null;
         const url = button.data('url');
 
         $.ajax({
@@ -434,18 +435,34 @@ $(document).ready(function () {
             },
             success: function (response) {
                 if (response.success) {
+                    // ✅ Update cart count badge
+                    const cartBadge = document.querySelector('.cart-count-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = response.total_items;
+                    } else {
+                        const icon = document.querySelector('.icon-handbag');
+                        if (icon) {
+                            const badge = document.createElement('span');
+                            badge.className = 'cart-count-badge';
+                            badge.textContent = response.total_items;
+                            icon.parentElement.appendChild(badge);
+                        }
+                    }
+
                     alert('Added to cart. Total items: ' + response.total_items);
                 } else {
                     alert('Failed: ' + response.error);
                 }
             },
-            error: function () {
+            error: function (xhr, status, error) {
+                console.error("Add to cart error:", xhr.responseText);
                 alert('Error adding to cart.');
             }
         });
     });
 });
 </script>
+
 
 {% endblock %}
 </body>

@@ -32,6 +32,7 @@ def sign_up(request):
             device.generate_challenge()
 
             request.session['user_id'] = new_user.id
+            request.session['signup_flow'] = True  # Set flag for redirect control
             messages.success(request, 'An OTP has been sent to your email. Please verify to complete the registration.')
             return redirect('accounts:verify_signup_otp')
         else:
@@ -67,6 +68,7 @@ def verify_signup_otp(request):
                     user.save()
                     login(request, user)
                     messages.success(request, "Your account has been verified and you are now logged in.")
+                    request.session.pop('signup_flow', None)  # Remove flag after use
                     return redirect("accounts:user_profile")
                 else:
                     form.add_error('otp', 'Invalid OTP')
@@ -98,6 +100,7 @@ def login_view(request):
 
             request.session['email'] = email
             request.session['password'] = password
+            request.session['signup_flow'] = False  # This is a login flow
             return redirect('accounts:verify_otp')
         else:
             messages.error(request, "Invalid email or password")
@@ -128,7 +131,13 @@ def verify_otp(request):
                 if device.verify_token(otp):
                     login(request, user)
                     messages.success(request, "Logged in successfully")
-                    return redirect("accounts:user_profile")
+
+                    # Decide redirect based on signup/login flag
+                    if request.session.pop('signup_flow', False):
+                        return redirect("accounts:user_profile")
+                    else:
+                        return redirect("products:home")
+
                 else:
                     form.add_error('otp', 'Invalid OTP')
             except CustomEmailOTPDevice.DoesNotExist:

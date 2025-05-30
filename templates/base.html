@@ -9,7 +9,7 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
 
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>{% block title %}My Django Project{% endblock %}</title>
+    <title>{% block title %}Stellars Online - Premium Bags{% endblock %}</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -45,7 +45,7 @@
 
     
     <!-- Place favicon.ico in the root directory -->
-    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/logo/logo.svg' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/logo/STELLAR_logo.svg' %}">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
 
@@ -85,196 +85,294 @@
 
     <!-- Body main wrapper start -->
     <div class="wrapper">
-        <!-- Start Header Style -->
-        <header id="htc__header" class="htc__header__area header--one">
-            <div class="header__top__area">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-5 col-lg-5 col-sm-5 col-xs-12">
-                            <div class="ht__header__top__left">
-                                <ul class="select__language hidden-sm hidden-xs">
-                                    <li class="drop--lan"><a href="#">eng</a>
-                                        <ul class="language__option">
-                                            <li><a href="#">Engish</a></li>
-                                        </ul>
-                                        </ul>
-                                    </li>
-                                </ul>
-                                <div class="htc__contact">
-                                    <a href="#"><i class="icon-call-out icons"></i>Call Us: +91 84510 31694</a>
-                                </div>
-                            </div>
-                        </div>
-                            <div class="col-md-2 col-lg-2 col-sm-2 col-xs-12">
-                                <div class="logo">
-                                    <a href="{% url 'home' %}">
-                                        <img src="{% static 'images/logo/logo.svg' %}" alt="logo image" style="width: 350px; height: 50px;">
-                                    </a>
-                                </div>
-                            </div>
 
-                        <div class="col-md-5 col-lg-5 col-sm-5 col-xs-12">
-                            <ul class="ht__header__right">
-                                <li><a href="{% url 'products:about' %}">About</a></li>
-                                <li><a href="{% url 'accounts:user_profile' %}">Account</a></li>
-                                {% if user.is_authenticated %}
-                                <!-- If the user is authenticated, display the logout link -->
-                                <li><a href="{% url 'accounts:logout' %}">Logout</a></li>
-                                {% else %}
-                                <!-- If the user is not authenticated, display the login link -->
-                                <li><a href="{% url 'accounts:login' %}">Login</a></li>
-                                {% endif %}
-                                <li><a href="{% url 'products:wishlist' %}">Wishlist</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="promo-strip">
+  <div class="promo-text-wrapper">
+    <div class="promo-text">
+      Flat 10% Off on Watches | Use code: SYLVIO10
+    </div>
+  </div>
+  <button class="promo-close" onclick="this.parentElement.style.display='none'">&times;</button>
+</div>
+
+<style>
+  .promo-strip {
+    background-color: #2d2d2d;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    padding: 0 40px 0 0; /* space for close button */
+  }
+
+  .promo-text-wrapper {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .promo-text {
+    display: inline-block;
+    padding-left: 100%;
+    animation: scroll-left 15s linear infinite;
+  }
+
+  @keyframes scroll-left {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  .promo-close {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    height: 100%;
+    line-height: 30px;
+  }
+</style>
+
+        <header id="htc__header" class="htc__header__area header--3" style="margin-top:160px">
             <!-- Start Mainmenu Area -->
             <div id="sticky-header-with-topbar" class="mainmenu__wrap sticky__header">
                 <div class="container-fluid">
                     <div class="row">
                         <div class="menumenu__container clearfix">
-                            <div class="col-md-2 col-lg-2 col-sm-3 col-xs-3">
-<!-- Search Form -->
-<form id="globalSearchForm" style="display: flex; align-items: center;">
-    <input type="text" id="searchInput" placeholder="Search anything..."
-           style="flex-grow: 1; padding: 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc;">
-    <button type="submit" style="margin-left: 10px; height: 44px; border-radius: 6px;">
-        <i class="icon-magnifier icons" style="font-size: 18px;"></i>
-    </button>
-</form>
-
-<!-- Popup for No Results -->
-<div id="noResultsModal" style="
-    display: none;
-    position: fixed;
-    top: 20%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    padding: 20px 30px;
-    border-radius: 8px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-    z-index: 9999;
-    font-size: 16px;
-    color: #333;
-    opacity: 1;
-    transition: opacity 0.5s ease;
-">
-    <p id="noResultsMessage">No results found.</p>
-</div>
-
-<script>
-document.getElementById('globalSearchForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) return;
-
-    fetch("{% url 'products:global_search' %}?q=" + encodeURIComponent(query))
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'redirect') {
-                window.location.href = data.url;
-            } else if (data.status === 'not_found') {
-                const modal = document.getElementById('noResultsModal');
-                const message = document.getElementById('noResultsMessage');
-                message.innerText = data.message || "No results found.";
-
-                modal.style.opacity = 1;
-                modal.style.display = 'block';
-
-                setTimeout(() => {
-                    modal.style.opacity = 0;
-                    setTimeout(() => {
-                        modal.style.display = 'none';
-                    }, 500); // Match the CSS transition duration
-                }, 3000);
-            }
-        })
-        .catch(error => {
-            console.error('Search error:', error);
-        });
-});
-</script>
-
-
+                            <div class="col-md-2 col-xs-6 col-sm-6">
+                                <div class="logo">
+                                    <a href="{% url 'home' %}">
+                                        <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="logo">
+                                    </a>
+                                </div>
                             </div>
-                            <div class="col-md-8 col-lg-8 col-sm-6 col-xs-5">
+                            <div class="col-md-8 hidden-xs hidden-sm">
                                 <nav class="main__menu__nav hidden-xs hidden-sm">
                                     <ul class="main__menu">
-                                        <li class="drop">
-                                            <a href="{% url 'home' %}">Home <i class="zmdi zmdi-chevron-down"></i></a>
-                                        </li>
-
-                                        <li class="drop">
-                                            <a href="#">Shop <i class="zmdi zmdi-chevron-down"></i></a>
-                                            <ul class="dropdown mega_dropdown">
-                                                {% for main_category in main_categories %}
-                                                    <li>
-                                                        <a class="mega__title" href="#">{{ main_category.title }}</a>
-                                                        <ul class="mega__item">
-                                                            {% for sub_category in main_category.subcategories.all %}
-                                                                <li>
-                                                                    <a href="{% url 'products:product_grid_by_sub_category' sub_category.sid %}">
-                                                                        {{ sub_category.title }}
-                                                                    </a>
-                                                                </li>
-                                                            {% endfor %}
-                                                        </ul>
-                                                    </li>
+                                        <li><a href="{% url 'home' %}">home</a></li>
+                                        <li class="drop" style="position: relative;">
+                                          <a href="#">Shop</a>
+                                          <ul class="dropdown mega_dropdown" style="
+                                            position: absolute;
+                                            top: 100%;
+                                            left: 50%;
+                                            transform: translateX(-50%);
+                                            background: white;
+                                            padding: 15px;
+                                            border: 1px solid #e0e0e0;
+                                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                                            width: 660px;
+                                            max-height: 400px;
+                                            overflow-y: auto;
+                                            opacity: 0;
+                                            visibility: hidden;
+                                            display: flex;
+                                            flex-wrap: wrap;
+                                            transition: all 0.3s ease;
+                                            z-index: 99999;
+                                          ">
+                                            {% for main_category in main_categories %}
+                                            <li style="width: 220px; margin-bottom: 20px;">
+                                              <a class="mega__title" href="#" style="font-weight: bold; display: block; margin-bottom: 8px; color: #222;">
+                                                {{ main_category.title }}
+                                              </a>
+                                              <ul class="mega__item" style="list-style: none; padding: 0;">
+                                                {% for sub_category in main_category.subcategories.all %}
+                                                <li>
+                                                  <a href="{% url 'products:product_grid_by_sub_category' sub_category.sid %}" style="display: block; padding: 5px 0; color: #555; text-decoration: none;">
+                                                    {{ sub_category.title }}
+                                                  </a>
+                                                </li>
                                                 {% endfor %}
-                                            </ul>
+                                              </ul>
+                                            </li>
+                                            {% endfor %}
+                                          </ul>
                                         </li>
-
-                                        <li><a href="{% url 'blog_list' %}">Blog</a></li>
-                                        <li><a href="{% url 'products:contact' %}">Contact</a></li>
-                                        <li class="drop">
-                                            <a href="#">Account <i class="zmdi zmdi-chevron-down"></i></a>
+                                        <style>
+                                          .main__menu li.drop:hover > ul.dropdown,
+                                          .main__menu li.drop:hover > ul.mega_dropdown {
+                                            opacity: 1 !important;
+                                            visibility: visible !important;
+                                          }
+                                        </style>
+                                        <li><a href="{% url 'products:about' %}">about</a></li>
+                                        <li><a href="{% url 'blog_list' %}">blog</a></li>
+                                        <li class="drop"><a href="#">account <i class="zmdi zmdi-chevron-down"></i></a>
                                             <ul class="dropdown">
                                                 <li><a href="{% url 'accounts:user_profile' %}">User Profile</a></li>
                                                 <li><a href="{% url 'products:order_tracking' %}">Orders</a></li>
                                                 <li><a href="{% url 'products:faq' %}">FAQ</a></li>
+                                                {% if user.is_authenticated %}
+                                                <!-- If the user is authenticated, display the logout link -->
+                                                <li><a href="{% url 'accounts:logout' %}">Logout</a></li>
+                                                {% else %}
+                                                <!-- If the user is not authenticated, display the login link -->
+                                                <li><a href="{% url 'accounts:login' %}">Login</a></li>
+                                                {% endif %}
 
                                             </ul>
                                         </li>
+                                        <li><a href="{% url 'products:contact' %}">contact</a></li>
+                                        <li><a href="{% url 'products:wishlist' %}">whishlist</a></li>
+
                                     </ul>
                                 </nav>
-
-                                <!-- Mobile Menu -->
-                                <div class="mobile-menu clearfix visible-xs visible-sm">
-                                    <nav id="mobile_dropdown">
-                                        <ul>
-                                            <li><a href="{% url 'home' %}">Home</a></li>
-                                            <li><a href="{% url 'products:product_grid' %}">Shop</a></li>
-                                            <li><a href="{% url 'blog_list' %}">Blog</a></li>
-                                            <li><a href="{% url 'products:contact' %}">Contact</a></li>
-                                            <li class="drop">
-                                                <a href="#">Account <i class="zmdi zmdi-chevron-down"></i></a>
-                                                <ul class="dropdown">
-                                                    <li><a href="{% url 'accounts:user_profile' %}">User Profile</a></li>
-                                                    <li><a href="{% url 'products:order_tracking' %}">Orders</a></li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                    </nav>
-                                </div>
                             </div>
-
-                            <div class="col-md-2 col-lg-2 col-sm-3 col-xs-4">
-                                <div class="htc__shopping__cart">
-                                    <a class="cart__menu" href="{% url 'products:cart_view' %}"><i class="icon-handbag icons"></i></a>
-                                    <a href="#"><span class="htc__qua">{{ item_count }}</span></a>
+                            <div class="col-md-2 col-xs-6 col-sm-6">
+                                <div class="htc__header__right">
+                                    <div class="header__search search search__open">
+                                        <a href="#"><i class="icon-magnifier icons"></i></a>
+                                    </div>
+                                    <div class="htc__shopping__cart">
+                                        <a class="cart__menu" href="{% url 'products:cart_view' %}" style="position: relative; display: inline-block;">
+                                            <i class="icon-handbag icons" style="font-size: 28px;"></i>
+                                            {% if item_count %}
+                                                <span style="
+                                                    position: absolute;
+                                                    top: -8px;
+                                                    right: -10px;
+                                                    background: #2bdac7;
+                                                    color: white;
+                                                    font-size: 12px;
+                                                    font-weight: bold;
+                                                    padding: 2px 6px;
+                                                    border-radius: 50%;
+                                                    line-height: 1;
+                                                ">{{ item_count }}</span>
+                                            {% endif %}
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="mobile-menu-area"></div>
                 </div>
+                <div class="mobile-menu clearfix visible-xs visible-sm">
+
+                        <nav id="mobile_dropdown">
+                            <ul>
+                                <li>    <form id="mobileSearchForm" method="get" style="padding: 10px; text-align: center;">
+                                        <input id="mobileSearchInput" name="q" type="text" placeholder="Search here..." style="width: 80%; padding: 8px; font-size: 14px;">
+                                        <button type="submit" style="padding: 8px 10px; font-size: 14px;"><i class="zmdi zmdi-search"></i></button>
+                                    </form>
+                                </li>
+                                <style>
+                                    #mobileSearchForm input[type="text"] {
+                                    border: 3px solid #ccc;
+                                    border-radius: 4px;
+                                    color: white;                     /* Text color */
+
+                                }
+
+                                #mobileSearchForm button {
+                                    background: #3fd9b2;
+                                    border: none;
+                                    color: white;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                }
+                                </style>
+                                <li><a href="{% url 'home' %}">Home</a></li>
+                                <li><a href="{% url 'products:product_grid' %}">Shop</a>
+                                    <ul>
+                                    {% for main_category in main_categories %}
+                                        <li>
+                                            <a class="mega__title" href="#">{{ main_category.title }}</a>
+                                            <ul class="mega__item">
+                                                {% for sub_category in main_category.subcategories.all %}
+                                                    <li><a href="{% url 'products:product_grid_by_sub_category' sub_category.sid %}">{{ sub_category.title }}</a></li>
+                                                {% endfor %}
+                                            </ul>
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
+                                </li>
+                                <li><a href="{% url 'products:about' %}">About</a></li>
+                                <li><a href="{% url 'blog_list' %}">Blog</a></li>
+                                <li><a href="{% url 'products:contact' %}">Contact</a></li>
+                                <li><a href="#">Account</a>
+                                    <ul>
+                                    <li><a href="{% url 'accounts:user_profile' %}">User Profile</a></li>
+                                    <li><a href="{% url 'products:order_tracking' %}">Orders</a></li>
+                                    <li><a href="{% url 'products:faq' %}">FAQ</a></li>
+                                    <li><a href="{% url 'accounts:user_profile' %}">Account</a></li>
+                                                {% if user.is_authenticated %}
+                                                <!-- If the user is authenticated, display the logout link -->
+                                                <li><a href="{% url 'accounts:logout' %}">Logout</a></li>
+                                                {% else %}
+                                                <!-- If the user is not authenticated, display the login link -->
+                                                <li><a href="{% url 'accounts:login' %}">Login</a></li>
+                                                {% endif %}
+                                    </ul>
+                                </li>
+                                <li><a href="{% url 'products:wishlist' %}">Wishlist</a></li>
+                            </ul>
+                        </nav>
+                    </div>
+                    <div class="mobile-menu-area"></div>
             </div>
             <!-- End Mainmenu Area -->
         </header>
+
+<div class="offset__wrapper">
+            <!-- Start Search Popap -->
+            <div class="search__area">
+                <div class="container" >
+                    <div class="row" >
+                        <div class="col-md-12" >
+                            <div class="search__inner">
+                                <form id="globalSearchForm" method="get">
+                                    <input id="searchQuery" name="q" placeholder="Search here..." type="text">
+                                    <button type="submit"></button>
+                                </form>
+                                <script>
+                                document.getElementById('globalSearchForm').addEventListener('submit', function(event) {
+                                    event.preventDefault();
+                                    const query = document.getElementById('searchQuery').value.trim();
+                                    if (!query) return;
+
+                                    fetch("{% url 'products:global_search_view' %}?q=" + encodeURIComponent(query))
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.status === 'redirect') {
+                                                window.location.href = data.url;
+                                            } else {
+                                                alert(data.message || 'No results found.');
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error('Search error:', error);
+                                            alert('Something went wrong. Please try again.');
+                                        });
+                                });
+                                </script>
+
+                                <div class="search__close__btn">
+                                    <span class="search__close__btn_icon"><i class="zmdi zmdi-close"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- End Search Popap -->
+            <!-- Start Cart Panel -->
+
+            <!-- End Cart Panel -->
+        </div>
+
+
+
         <!-- End Header Area -->
 
            </div>
@@ -305,7 +403,7 @@ document.getElementById('globalSearchForm').addEventListener('submit', function(
                                         <div class="footer__top">
                                             <div class="ft__logo">
                                                 <a href="{% url 'home' %}">
-                                                    <img src="{% static 'images/logo/logo.svg' %}" alt="logo">
+                                                    <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="logo">
                                                 </a>
                                             </div>
                                             <div class="ft__address__wrap">
@@ -651,6 +749,7 @@ document.getElementById('globalSearchForm').addEventListener('submit', function(
             });
         }
     </script>
+
 
 
 

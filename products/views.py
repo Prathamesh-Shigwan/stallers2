@@ -45,6 +45,7 @@ from django.contrib.admin import AdminSite
 from django.db.models.functions import TruncDay, TruncMonth
 from django.utils.timezone import now
 from decimal import Decimal
+from django.urls import reverse_lazy
 
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 COLOR_HEX_MAP = {
@@ -186,7 +187,7 @@ def remove_coupon(request):
         return JsonResponse({"success": False, "message": "Cart not found."})
 
 
-@login_required
+@login_required(login_url=reverse_lazy('accounts:login'))
 @csrf_protect
 def cart_view(request):
     cart, _ = Cart.objects.get_or_create(user=request.user, defaults={'total': Decimal('0.00')})
@@ -229,7 +230,7 @@ def contact(request):
                     email_subject,
                     email_message,
                     email,  # From email (sender's email)
-                    ['prathameshshigwan52@gmail.com'],  # To email (your email or business email)
+                    ['stellarspvt@gmail.com'],  # To email (your email or business email)
                     fail_silently=False,
                 )
                 success_message = "Your message has been sent successfully. Thank you for contacting us!"
@@ -286,7 +287,7 @@ def base(request, cid=None, is_subcategory=False):
         'color_hex_map': COLOR_HEX_MAP,
 
     }
-    return render(request, 'base.html', context)
+    return render(request, 'base11.html', context)
 
 
 def product_grid(request, cid=None, is_subcategory=False):
@@ -427,7 +428,7 @@ def get_variant_data(request, variant_id):
         return JsonResponse({"error": "Variant not found"}, status=404)
 
 
-@login_required
+@login_required(login_url=reverse_lazy('accounts:login'))
 def wishlist(request):
     # Only keep wishlist items where product still exists
     raw_wishlist = Wishlist.objects.filter(user=request.user).select_related('product')
@@ -1131,7 +1132,7 @@ def send_order_email(request, order_id):
     })
     text_content = strip_tags(html_content)
     from_email = settings.DEFAULT_FROM_EMAIL
-    to_email = ['prathameshshigwan222@gmail.com', request.user.email]
+    to_email = ['stellarspvt@gmail.com', request.user.email]
 
     email = EmailMultiAlternatives(subject, text_content, from_email, to_email)
     email.attach_alternative(html_content, "text/html")
@@ -1141,7 +1142,7 @@ def send_order_email(request, order_id):
 
 
 
-@login_required
+@login_required(login_url=reverse_lazy('accounts:login'))
 def order_tracking(request):
     user_orders = Order.objects.filter(user=request.user)
     context = {'orders': user_orders}
@@ -1198,6 +1199,7 @@ def order_details(request, order_id):
     return render(request, 'order_details.html', context)
 
 
+
 @login_required
 def order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -1214,11 +1216,17 @@ def order_invoice(request, order_id):
     discount = order.discount or Decimal('0.00')
     discount_code = order.discount_code or None
 
+    # Get shipping charge from site settings
     shipping_charge = SiteSettings.objects.first().shipping_charge if SiteSettings.objects.exists() else Decimal('0.00')
 
-    taxable_amount = order.total * Decimal('0.18')  # 18% GST
+    # Taxable amount based on 18% GST
+    taxable_amount = order.total * Decimal('0.18')
     total_excluding = order.total - taxable_amount
     final_total = (order.total - discount) + shipping_charge
+
+    # Determine if it's an interstate transaction
+    shipping_state = order.shipping_state.strip().lower()
+    is_interstate = shipping_state != "maharashtra"  # Replace with your business base state if different
 
     context = {
         'order': order,
@@ -1251,7 +1259,9 @@ def order_invoice(request, order_id):
         'taxable_amount': taxable_amount,
         'total_excluding': total_excluding,
         'final_total': final_total,
+        'is_interstate': is_interstate,
     }
+
     return render(request, 'invoice_temp.html', context)
 
 
@@ -1555,7 +1565,6 @@ def global_search_view(request):
             pass
 
     return JsonResponse({'status': 'not_found', 'message': 'No matching result found.'})
-
 
 
 def claim_discount(request):

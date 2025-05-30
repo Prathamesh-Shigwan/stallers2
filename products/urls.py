@@ -11,7 +11,7 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('tinymce/', include('tinymce.urls')),
 
-    path('search/', views.global_search_view, name='global_search'),
+    path('global-search/', views.global_search_view, name='global_search_view'),
 
     path('about/', views.about, name='about'),
     path('delivery_info/', views.delivery_info, name='delivery_info'),

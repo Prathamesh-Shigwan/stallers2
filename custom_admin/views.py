@@ -4,7 +4,7 @@ from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
 from products.models import MainCategory, SubCategory, Product, CartItem, Order, OrderItem, \
     ExtraImages, ProductVariant, VariantExtraImage, Cart, CartItem, \
-    Wishlist, ShippingAddress, BillingAddress, BannerImage, About, SiteSettings, DiscountCode, VariantSizeOption
+    Wishlist, ShippingAddress, BillingAddress, BannerImage, About, SiteSettings, DiscountCode, VariantSizeOption,MediaLibrary
 from accounts.models import User
 from accounts.forms import UserRoleUpdateForm, ProfileForm, UserUpdateForm
 from django.http import FileResponse
@@ -53,6 +53,7 @@ from io import BytesIO
 from products.models import ProductVariant, VariantSizeOption
 from reportlab.graphics.barcode import code128
 import zipfile
+from collections import defaultdict
 
 import datetime
 
@@ -329,100 +330,106 @@ def delete_subcategory_view(request, pk):
     return render(request, 'custom_admin/products/delete_subcategory.html', {'subcategory': subcategory})
 
 
+
 @staff_member_required
 def upload_main_categories_view(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
         excel_file = request.FILES['excel_file']
-        df = pd.read_excel(excel_file)
+        try:
+            df = pd.read_excel(excel_file)
+        except Exception as e:
+            messages.error(request, f"Error reading Excel file: {e}")
+            return redirect('custom_admin:main_categories')
 
         created_count = 0
         for _, row in df.iterrows():
             title = str(row.get('Title')).strip()
-            price = row.get('Price') or 0.00
+            price = row.get('Price') or 0.0
+            image_name = str(row.get('Image')).strip()
 
-            # Safely skip image if not provided or invalid
-            image_filename = row.get('Image') if 'Image' in row else None
-
-            if image_filename and isinstance(image_filename, str) and image_filename.strip():
-                image_path = os.path.join(settings.MEDIA_ROOT, 'uploads/categories', image_filename.strip())
-                if os.path.exists(image_path):
-                    with open(image_path, 'rb') as img_file:
-                        image = ImageFile(img_file, name=image_filename.strip())
-                        MainCategory.objects.create(title=title, price=price, image=image)
-                        created_count += 1
-                else:
-                    # Skip image but create category without image
-                    MainCategory.objects.create(title=title, price=price)
-                    messages.warning(request, f"Image not found for category '{title}', created without image.")
-                    created_count += 1
+            # Look for image in MediaLibrary
+            media_file = MediaLibrary.objects.filter(name__iexact=image_name).first()
+            if media_file:
+                image = ImageFile(media_file.file, name=media_file.file.name)
             else:
-                # No image provided, just create the category
-                MainCategory.objects.create(title=title, price=price)
-                created_count += 1
+                # Fallback to default image
+                default_path = os.path.join(settings.MEDIA_ROOT, 'uploads/categories/default.png')
+                if os.path.exists(default_path):
+                    with open(default_path, 'rb') as f:
+                        image = ImageFile(f, name='default.png')
+                    messages.warning(request, f"Image '{image_name}' not found. Used default image.")
+                else:
+                    image = None
+                    messages.warning(request, f"Image '{image_name}' not found and default image missing.")
+
+            MainCategory.objects.create(
+                title=title,
+                price=price,
+                image=image
+            )
+            created_count += 1
 
         messages.success(request, f"{created_count} main categories uploaded successfully.")
         return redirect('custom_admin:main_categories')
 
     return render(request, 'custom_admin/products/upload_main_categories.html')
 
+
+
 @staff_member_required
 def upload_subcategories_view(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
         excel_file = request.FILES['excel_file']
-        df = pd.read_excel(excel_file)
+        try:
+            df = pd.read_excel(excel_file)
+        except Exception as e:
+            messages.error(request, f"Error reading Excel file: {e}")
+            return redirect('custom_admin:subcategories')
 
         created_count = 0
         for _, row in df.iterrows():
             main_category_title = str(row.get('Main Category Title')).strip()
             title = str(row.get('Title')).strip()
-            price = row.get('Price') or 0.00
+            price = row.get('Price') or 0.0
             name = str(row.get('Name') or '').strip()
-            image_filename = row.get('Image') if 'Image' in row else None
+            image_name = str(row.get('Image')).strip() if 'Image' in row else ''
 
+            # Get the MainCategory
             try:
                 main_category = MainCategory.objects.get(title__iexact=main_category_title)
             except MainCategory.DoesNotExist:
-                messages.warning(request, f"Main category '{main_category_title}' not found. Skipping '{title}'.")
+                messages.warning(request, f"Main category '{main_category_title}' not found. Skipping subcategory '{title}'.")
                 continue
 
-            # Handle optional image
-            if image_filename and isinstance(image_filename, str) and image_filename.strip():
-                image_path = os.path.join(settings.MEDIA_ROOT, 'uploads/categories', image_filename.strip())
-                if os.path.exists(image_path):
-                    with open(image_path, 'rb') as img_file:
-                        image = ImageFile(img_file, name=image_filename.strip())
-                        SubCategory.objects.create(
-                            main_category=main_category,
-                            title=title,
-                            price=price,
-                            name=name,
-                            image=image
-                        )
-                        created_count += 1
-                else:
-                    # Create without image if not found
-                    SubCategory.objects.create(
-                        main_category=main_category,
-                        title=title,
-                        price=price,
-                        name=name
-                    )
-                    messages.warning(request, f"Image not found for subcategory '{title}', created without image.")
-                    created_count += 1
+            # Try to find uploaded image in MediaLibrary
+            media_file = MediaLibrary.objects.filter(name__iexact=image_name).first()
+            if media_file:
+                image = ImageFile(media_file.file, name=media_file.file.name)
             else:
-                # Create without image if not provided
-                SubCategory.objects.create(
-                    main_category=main_category,
-                    title=title,
-                    price=price,
-                    name=name
-                )
-                created_count += 1
+                # Fallback to default image
+                default_path = os.path.join(settings.MEDIA_ROOT, 'uploads/categories/default.png')
+                if os.path.exists(default_path):
+                    with open(default_path, 'rb') as f:
+                        image = ImageFile(f, name='default.png')
+                    messages.warning(request, f"Image '{image_name}' not found. Used default image for subcategory '{title}'.")
+                else:
+                    image = None
+                    messages.warning(request, f"Image '{image_name}' not found and default missing for '{title}'.")
+
+            SubCategory.objects.create(
+                main_category=main_category,
+                title=title,
+                name=name,
+                price=price,
+                image=image
+            )
+            created_count += 1
 
         messages.success(request, f"{created_count} subcategories uploaded successfully.")
         return redirect('custom_admin:subcategories')
 
     return render(request, 'custom_admin/products/upload_subcategories.html')
+
 
 
 def product_list_view(request):
@@ -650,80 +657,105 @@ def upload_variants_view(request):
 
         created_count = 0
         error_logs = []
+        grouped = defaultdict(list)
 
         for index, row in df.iterrows():
             try:
                 sku = str(row.get('Product SKU')).strip()
                 color = str(row.get('Color')).strip()
                 gender = str(row.get('Gender')).strip()
+                image_filename = str(row.get('Variant Image') or '').strip()
+
+                # Collect extra image fields
+                extra_images = []
+                for i in range(1, 7):
+                    extra_field = f'Extra Image {i}'
+                    img_name = str(row.get(extra_field)).strip() if row.get(extra_field) else ''
+                    if img_name:
+                        extra_images.append(img_name)
+
                 size = str(row.get('Size')).strip()
                 price = row.get('Price')
                 old_price = row.get('Old Price', None)
                 stock_quantity = int(row.get('Stock Quantity', 0))
-                image_filename = str(row.get('Variant Image')).strip()
 
-                # Validate and fetch the product
-                try:
-                    product = Product.objects.get(sku__iexact=sku)
-                except Product.DoesNotExist:
-                    error_logs.append(f"Row {index + 2}: Product with SKU '{sku}' not found.")
-                    continue
+                key = (sku, color, gender)
+                grouped[key].append({
+                    'size': size,
+                    'price': price,
+                    'old_price': old_price,
+                    'stock_quantity': stock_quantity,
+                    'variant_image': image_filename,
+                    'extra_images': extra_images,
+                    'row_index': index + 2
+                })
+            except Exception as e:
+                error_logs.append(f"Row {index + 2}: Error parsing data - {e}")
 
-                # Load variant image or dummy image
-                variant_image = None
-                image_dir = os.path.join(settings.MEDIA_ROOT, 'variants')
-                image_path = os.path.join(image_dir, image_filename)
-                dummy_path = os.path.join(image_dir, 'dummy.jpg')
+        for (sku, color, gender), size_rows in grouped.items():
+            try:
+                product = Product.objects.get(sku__iexact=sku)
+            except Product.DoesNotExist:
+                error_logs.append(f"Product with SKU '{sku}' not found.")
+                continue
 
-                if image_filename and os.path.exists(image_path):
-                    with open(image_path, 'rb') as img_file:
-                        image_content = img_file.read()
-                        variant_image = ImageFile(io.BytesIO(image_content), name=image_filename)
-                elif os.path.exists(dummy_path):
-                    with open(dummy_path, 'rb') as img_file:
-                        image_content = img_file.read()
-                        variant_image = ImageFile(io.BytesIO(image_content), name='dummy.jpg')
+            # Load variant image from first row
+            variant_image_filename = size_rows[0].get('variant_image')
+            image_path = os.path.join(settings.MEDIA_ROOT, 'uploads/media_library', variant_image_filename)
+            dummy_path = os.path.join(settings.MEDIA_ROOT, 'variants/dummy.jpg')
+
+            if variant_image_filename and os.path.exists(image_path):
+                with open(image_path, 'rb') as img_file:
+                    variant_image = ImageFile(io.BytesIO(img_file.read()), name=variant_image_filename)
+            elif os.path.exists(dummy_path):
+                with open(dummy_path, 'rb') as img_file:
+                    variant_image = ImageFile(io.BytesIO(img_file.read()), name='dummy.jpg')
+            else:
+                error_logs.append(f"Image not found for SKU '{sku}' and dummy missing.")
+                continue
+
+            # Create ProductVariant
+            variant = ProductVariant.objects.create(
+                product=product,
+                color=color,
+                gender=gender,
+                image=variant_image
+            )
+
+            # Handle extra images
+            extra_image_names = size_rows[0].get('extra_images', [])
+            for img_name in extra_image_names:
+                path = os.path.join(settings.MEDIA_ROOT, 'uploads/media_library', img_name)
+                if os.path.exists(path):
+                    with open(path, 'rb') as img_file:
+                        extra_image_file = ImageFile(io.BytesIO(img_file.read()), name=img_name)
+                        VariantExtraImage.objects.create(product_variant=variant, image=extra_image_file)
                 else:
-                    error_logs.append(f"Row {index + 2}: Dummy image not found at {dummy_path}")
-                    continue
+                    error_logs.append(f"Extra image '{img_name}' not found for SKU '{sku}'.")
 
-                # Create Variant
-                variant = ProductVariant.objects.create(
-                    product=product,
-                    color=color,
-                    gender=gender,
-                    image=variant_image
-                )
-
-                # Create Size Option
+            # Create all size options
+            for size_data in size_rows:
                 VariantSizeOption.objects.create(
                     variant=variant,
-                    size=size,
-                    price=price,
-                    old_price=old_price if not pd.isna(old_price) else None,
-                    stock_quantity=stock_quantity
+                    size=size_data['size'],
+                    price=size_data['price'],
+                    old_price=size_data['old_price'] if not pd.isna(size_data['old_price']) else None,
+                    stock_quantity=size_data['stock_quantity']
                 )
-
                 created_count += 1
 
-            except Exception as e:
-                error_logs.append(f"Row {index + 2}: Unexpected error - {e}")
-
-        # Show errors and success messages
         if error_logs:
             for log in error_logs:
                 messages.warning(request, log)
 
-        if created_count > 0:
-            messages.success(request, f"{created_count} variants and size options uploaded successfully.")
+        if created_count:
+            messages.success(request, f"{created_count} size options uploaded under multiple variants.")
         else:
-            messages.error(request, "No variants were added. Please check your file for errors.")
+            messages.error(request, "No variants were created. Check the Excel file for issues.")
 
         return redirect('custom_admin:variant_list')
 
     return render(request, 'custom_admin/products/upload_variants.html')
-
-
 
 def generate_variant_label(request, variant_id, size):
     from products.models import ProductVariant, VariantSizeOption
@@ -1241,3 +1273,49 @@ def delete_coupon_view(request, pk):
         coupon.delete()
         return redirect('custom_admin:coupon_list')
     return render(request, 'custom_admin/confirm_delete.html', {'object': coupon, 'title': 'Delete Coupon'})
+
+
+@staff_member_required
+def media_library_view(request):
+    query = request.GET.get('q', '')
+    media_files = MediaLibrary.objects.all()
+
+    if query:
+        media_files = media_files.filter(name__icontains=query)
+
+    if request.method == 'POST':
+        uploaded_files = request.FILES.getlist('files')  # <-- Handle multiple files
+        if not uploaded_files:
+            messages.error(request, "No files selected.")
+        else:
+            success_count = 0
+            for file in uploaded_files:
+                try:
+                    media = MediaLibrary(file=file, name=file.name)
+                    media.save()
+                    success_count += 1
+                except Exception as e:
+                    messages.warning(request, f"Error uploading '{file.name}': {str(e)}")
+
+            if success_count:
+                messages.success(request, f"{success_count} file(s) uploaded successfully.")
+            else:
+                messages.error(request, "No files were uploaded.")
+
+        return redirect('custom_admin:media_library')
+
+    return render(request, 'custom_admin/media_library.html', {'media_files': media_files})
+
+
+
+@staff_member_required
+def delete_media_file(request, pk):
+    media = get_object_or_404(MediaLibrary, pk=pk)
+
+    file_path = media.file.path
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+    media.delete()
+    messages.success(request, "Media file deleted successfully.")
+    return redirect('custom_admin:media_library')

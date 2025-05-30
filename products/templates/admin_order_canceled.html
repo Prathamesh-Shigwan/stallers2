@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Order Cancelled</title>
+</head>
+<body>
+    <h2>Order #{{ order.id }} Cancelled</h2>
+    <p>The customer has requested cancellation for the following order:</p>
+
+    <ul>
+        <li><strong>Order ID:</strong> {{ order.id }}</li>
+        <li><strong>Customer Name:</strong> {{ order.user.get_full_name }}</li>
+        <li><strong>Email:</strong> {{ order.user.email }}</li>
+        <li><strong>Reason:</strong> {{ reason }}</li>
+        <li><strong>Status:</strong> {{ order.status }}</li>
+    </ul>
+
+    <p>Please review and take action accordingly.</p>
+</body>
+</html>
