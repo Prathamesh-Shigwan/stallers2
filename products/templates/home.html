@@ -14,19 +14,25 @@
         <!-- End Offset Wrapper -->
 {% if not request.user.is_authenticated %}
 <!-- Discount Popup -->
-<div id="discountPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+<div id="discountPopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 120%;
     background-color: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
   <div style="background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 10px; text-align: center; position: relative;">
     <button id="closePopup" style="position: absolute; right: 15px; top: 15px; border: none; background: none; font-size: 20px;">&times;</button>
-    <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="Logo" style="width: 80px; margin-bottom: 20px;">
+    <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="Logo" style="width: 80px; margin-bottom: 10px;">
+    {# Dynamically load discount popup title from SiteContent #}
+    {% if site_content %}
+    <h2 style="font-weight: 600;">{{ site_content.discount_popup_title }}</h2>
+    <p>{{ site_content.discount_popup_subtitle }}</p>
+    {% else %}
     <h2 style="font-weight: 600;">Get 10% OFF your first order</h2>
     <p>Sign up and unlock your instant discount.</p>
+    {% endif %}
     <form id="discountForm" style="margin-top: 20px;">
       {% csrf_token %}
       <input type="text" name="name" placeholder="Name" required style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px;">
 
       <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-        <span style="display: flex; align-items: center; padding: 0 10px; background: #eee; border: 1px solid #ccc; border-radius: 5px;">🇮🇳 +91</span>
+        <span style="display: flex; align-items: center; padding: 0 10px; background: #eee; border: 1px solid #ccc; border-radius: 5px;">�🇳 +91</span>
         <input type="text" name="phone" placeholder="Phone Number" required maxlength="10" pattern="[0-9]{10}" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
       </div>
 
@@ -35,11 +41,19 @@
       <button type="submit" style="width: 100%; padding: 10px; background: black; color: white; border: none; border-radius: 5px; font-weight: 600;">Claim discount</button>
     </form>
     <a href="#" id="noThanks" style="display: block; margin-top: 20px; color: #888;">No, thanks</a>
+    {# Dynamically load discount popup email note from SiteContent #}
+    {% if site_content %}
+    <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
+      {{ site_content.discount_popup_email_note }}
+    </p>
+    {% else %}
     <p style="font-size: 12px; color: #aaa; margin-top: 10px;">
       You are signing up to receive communication via email and can unsubscribe at any time.
     </p>
+    {% endif %}
   </div>
 </div>
+
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -269,64 +283,7 @@ $(document).ready(function() {
         </div>
     </div>
 </section>
-        <!-- End Category Area -->
-        <!-- Start Prize Good Area -->
-        <!-- End Prize Good Area -->
-        <!-- Start Product Area -->
-<!--        <section class="htc__product__area pb&#45;&#45;70">-->
-<!--            <div class="container">-->
-<!--                <div class="row">-->
-<!--                    <div class="col-xs-12">-->
-<!--                        <div class="section__title text&#45;&#45;left">-->
-<!--                            <h2 class="title__line title__border">New Arrivals</h2>-->
-<!--                            <p># Trending This Season</p>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <div class="row">-->
-<!--                    <div class="product__wrap activation__style&#45;&#45;1 owl-carousel owl-theme clearfix">-->
-<!--                        &lt;!&ndash; Start Single Product &ndash;&gt;-->
-<!--                        {% for p in products %}-->
-<!--                        <div class="col-md-3 col-lg-3 col-sm-6 col-xs-12">-->
-<!--                            <div class="product">-->
-<!--                                <div class="product__thumb">-->
-<!--                                    <a href="{% url 'products:product_details' %}">-->
-<!--                                        &lt;!&ndash; Assuming 'image' is an ImageField in your Product model &ndash;&gt;-->
-<!--                                        <img src="{{ p.image.url }}" alt="{{ p.title }}">-->
-<!--                                    </a>-->
-<!--                                    <div class="product__offer">-->
-<!--                                        <span class="new">new</span>-->
-<!--                                        &lt;!&ndash; Example of showing a discount, adjust as necessary &ndash;&gt;-->
-<!--                                        <span>{{ p.get_percentage| floatformat }}</span>-->
-<!--                                    </div>-->
-<!--                                    <div class="product__hover__info">-->
-<!--                                        <ul class="product__action">-->
-<!--                                            <li><a href="{% url 'products:wishlist' %}"><i class="icon-heart icons"></i></a></li>-->
-<!--                                            <li><a href="{% url 'products:cart_view' %}"><i class="icon-handbag icons"></i></a></li>-->
-<!--                                            <li><a href="#"><i class="icon-shuffle icons"></i></a></li>-->
-<!--                                        </ul>-->
-<!--                                    </div>-->
-<!--                                </div>-->
-<!--                                <div class="product__inner">-->
-<!--                                    <div class="product__details">-->
-<!--                                        <h2><a href="{% url 'products:product_details'%}">{{ p.title }}</a></h2>-->
-<!--                                        <ul class="pro__prize">-->
-<!--                                            &lt;!&ndash; Displaying product price, adjust as needed &ndash;&gt;-->
-<!--                                            <li class="old__prize">&#8377; {{ p.old_price }}</li>-->
-<!--                                            <li>&#8377; {{ p.price }}</li>-->
-<!--                                        </ul>-->
-<!--                                    </div>-->
-<!--                                </div>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                        {% endfor %}-->
-<!--                        &lt;!&ndash; End Single Product &ndash;&gt;-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </section>-->
-        <!-- End Product Area -->
-        <!-- Start Testimonial Area -->
+
 <br>
 <br>
 <br>
@@ -383,17 +340,25 @@ $(document).ready(function() {
                                 <a><i class="icon-handbag icons"></i></a>
                             </button>
                         </li>
-                        <li><a href="#"><i class="icon-shuffle icons"></i></a></li>
+                        {# MODIFIED HERE: Share functionality for the product #}
+                        <li>
+                            <a href="#" class="share-product-btn"
+                               data-product-url="{% url 'products:product_details' p.pid %}"
+                               data-product-name="{{ p.name }}"
+                               data-product-image="{{ v.image.url }}"
+                               data-product-description="{{ p.description|striptags|truncatechars:150 }}">
+                                <i class="icon-share-alt icons"></i> {# Changed icon to share-alt for clarity #}
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
 
             <div class="product__inner">
-                <div class="product__details">
-                    <h2 style="color: black; font-size: 15px; font-weight: 600; margin: 10px 0;">
+                <div class="product__details" style="text-align: center;">  <h2 style="color: black; font-size: 15px; font-weight: 600; margin: 10px 0;">
                         <a href="{% url 'products:product_details' p.pid %}">{{ p.name }}</a>
                     </h2>
-                    <ul style="display: flex; align-items: center; gap: 10px; list-style: none; padding: 0; margin: 5px 0;">
+                    <ul style="display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; padding: 0; margin: 5px 0;">
                         {% if s.old_price %}
                         <li style="text-decoration: line-through; color: #999;">&#8377; {{ s.old_price }}</li>
                         {% endif %}
@@ -406,8 +371,92 @@ $(document).ready(function() {
     {% endif %}
     {% endwith %}
 {% endfor %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (your existing wishlist and cart scripts) ...
 
+        // Share Product Functionality
+        $(document).on("click", ".share-product-btn", function(e) {
+            e.preventDefault(); // Prevent the default link behavior
 
+            const button = $(this);
+            const productUrl = "{{ request.build_absolute_uri }}" + button.data('product-url'); // Construct absolute URL
+            const productName = button.data('product-name');
+            const productDescription = button.data('product-description');
+            const productImage = "{{ request.build_absolute_uri }}" + button.data('product-image'); // Construct absolute image URL
+
+            // Check if Web Share API is available
+            if (navigator.share) {
+                navigator.share({
+                    title: productName,
+                    text: productDescription,
+                    url: productUrl,
+                    files: [], // You can include files like images, but it's more complex
+                })
+                .then(() => console.log('Product shared successfully'))
+                .catch((error) => console.error('Error sharing product:', error));
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                // Open a custom share popup (simplified for common platforms)
+                const shareText = encodeURIComponent(`${productName} - ${productDescription}`);
+                const shareUrl = encodeURIComponent(productUrl);
+
+                const shareLinks = {
+                    facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+                    twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
+                    linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${shareUrl}&title=${encodeURIComponent(productName)}&summary=${shareText}`,
+                    whatsapp: `https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`
+                    // You can add more, e.g., email: `mailto:?subject=${shareText}&body=${productUrl}`
+                };
+
+                let shareOptionsHtml = `
+                    <div class="share-popup-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+                        <div class="share-popup-content" style="background: white; padding: 30px; border-radius: 8px; text-align: center; max-width: 350px; width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <button class="close-share-popup" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+                            <h4 style="margin-bottom: 20px; font-weight: 600;">Share this Product</h4>
+                            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;">
+                                <a href="${shareLinks.facebook}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px;">
+                                    <img src="{% static 'images/social-icons/facebook.svg' %}" alt="Facebook" style="width: 40px; height: 40px; margin-bottom: 5px;"> Facebook
+                                </a>
+                                <a href="${shareLinks.twitter}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px;">
+                                    <img src="{% static 'images/social-icons/twitter.svg' %}" alt="Twitter" style="width: 40px; height: 40px; margin-bottom: 5px;"> Twitter
+                                </a>
+                                <a href="${shareLinks.whatsapp}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px;">
+                                    <img src="{% static 'images/social-icons/whatsapp.svg' %}" alt="WhatsApp" style="width: 40px; height: 40px; margin-bottom: 5px;"> WhatsApp
+                                </a>
+                                <a href="${shareLinks.linkedin}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px;">
+                                    <img src="{% static 'images/social-icons/linkedin.svg' %}" alt="LinkedIn" style="width: 40px; height: 40px; margin-bottom: 5px;"> LinkedIn
+                                </a>
+                            </div>
+                            <button class="copy-link-btn" data-url="${productUrl}" style="background-color: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; margin-top: 20px; cursor: pointer; font-weight: 600;">
+                                <i class="icon-link icons"></i> Copy Link
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                $('body').append(shareOptionsHtml); // Add popup to body
+
+                // Close popup
+                $('.close-share-popup').on('click', function() {
+                    $('.share-popup-overlay').remove();
+                });
+
+                // Copy link functionality in popup
+                $('.copy-link-btn').on('click', function() {
+                    const urlToCopy = $(this).data('url');
+                    navigator.clipboard.writeText(urlToCopy).then(() => {
+                        alert('Product link copied to clipboard!');
+                        $('.share-popup-overlay').remove(); // Close popup after copying
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        alert('Could not copy link. Please copy it manually: ' + urlToCopy);
+                    });
+                });
+            }
+        });
+    });
+</script>
                 <!-- End Single Product -->
             </div>
         </div>
@@ -534,43 +583,54 @@ $(document).ready(function() {
 
 
 
-        <section class="htc__testimonial__area bg__white">
+        <section class="htc__blog__area bg__white pb--70">
     <div class="container">
         <div class="row">
-                    <div class="col-xs-12">
-                        <div class="section__title text--left">
-                            <h2 class="title__line title__border">Our Blogs</h2>
-
-                        </div>
-                    </div>
+            <div class="col-xs-12">
+                <div class="section__title text-center">
+                    <h2 class="title__line">Our Blog</h2>
+                    <p># Trending This Season</p>
                 </div>
+            </div>
+        </div>
         <div class="row">
-            <div class="ht__testimonial__activation clearfix">
+            <div class="ht__blog__wrap clearfix">
                 {% for blog in blogs %}
-                <!-- Start Single Blog as Testimonial -->
-                <div class="col-lg-6 col-md-6 single__tes">
-                    <div class="testimonial">
-                        <div class="testimonial__thumb">
+                <!-- Start Single Blog -->
+                <div class="col-md-6 col-lg-6 col-sm-12 col-xs-12">
+                    <div class="blog">
+                        <div class="blog__thumb" style="height: 400px; overflow: hidden;">
                             {% if blog.image %}
-                                <img src="{{ blog.image.url }}" alt="{{ blog.title }}">
+                            <a href="{% url 'blog_details' blog.slug %}">
+                                <img src="{{ blog.image.url }}" alt="{{ blog.title }}" style="width: 290px; height: 400px; object-fit: cover;">
+                            </a>
                             {% else %}
-                                <img src="{% static 'images/default_blog_image.png' %}" alt="Default Blog Image">
+                            <div style="width: 290px; height: 400px; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center;">
+                                No Image
+                            </div>
                             {% endif %}
-                            <span class="quote"><img src="{% static 'images/others/shape/quote.png' %}" alt="quote"></span>
                         </div>
-                        <div class="testimonial__details">
-                            <h4><a href="{{ blog.get_absolute_url }}">{{ blog.title }}</a></h4>
-                            <p>{{ blog.content|striptags|truncatewords:20 }}</p>
- <!-- Display a short preview -->
+                        <div class="blog__details">
+                            <div class="bl__date">
+                                <span>{{ blog.created_at|date:"F d, Y" }}</span>
+                            </div>
+                            <h2><a href="{% url 'blog_details' blog.slug %}">{{ blog.title }}</a></h2>
+                            <div class="blog__btn">
+                                <a href="{% url 'blog_details' blog.slug %}"><i class="zmdi zmdi-long-arrow-right"></i>Read More</a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- End Single Blog as Testimonial -->
+                <!-- End Single Blog -->
+                {% empty %}
+                <div class="col-12 text-center">
+                    <p>No blog posts available.</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
     </div>
-</section>
+</section></div>
 
         <!-- End Testimonial Area -->
 

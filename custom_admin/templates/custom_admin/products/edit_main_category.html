@@ -4,24 +4,24 @@
 <div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
     <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Edit Main Category</h2>
 
-    <form method="POST" enctype="multipart/form-data" style="max-width: 600px; margin: 0 auto;">
+    <form method="POST" enctype="multipart/form-data" style="max-width: 500px; margin: 0 auto; border: 1px solid #dee2e6; padding: 25px; border-radius: 8px;">
         {% csrf_token %}
         <div style="margin-bottom: 15px;">
-            <label for="id_title" style="display: block; font-weight: bold;">Title</label>
+            <label for="id_title" style="display: block; font-weight: bold; margin-bottom: 5px;">Title</label>
             <div style="border: 1px solid #ced4da; border-radius: 4px; padding: 8px;">
                 {{ form.title }}
             </div>
         </div>
         <div style="margin-bottom: 15px;">
-            <label for="id_price" style="display: block; font-weight: bold;">Price</label>
+            <label for="id_price" style="display: block; font-weight: bold; margin-bottom: 5px;">Price</label>
             <div style="border: 1px solid #ced4da; border-radius: 4px; padding: 8px;">
                 {{ form.price }}
             </div>
         </div>
         <div style="margin-bottom: 15px;">
-            <label for="id_image" style="display: block; font-weight: bold;">Image</label>
+            <label for="id_image" style="display: block; font-weight: bold; margin-bottom: 5px;">Image</label>
             <div style="position: relative;">
-                <label style="display: inline-block; padding: 8px 16px; border: 1px solid #ced4da; border-radius: 4px; background-color: #e9ecef; cursor: pointer;">
+                <label style="display: inline-block; padding: 8px 16px; border: 1px solid #007bff; border-radius: 4px; background-color: #007bff; color: white; cursor: pointer; transition: background-color 0.2s ease;">
                     Choose Image
                     <input type="file" name="image" id="id_image" style="display: none;">
                 </label>
@@ -33,11 +33,11 @@
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <button type="submit" class="btn btn-primary" style="background-color: #007bff; border-color: #007bff; font-weight: bold; padding: 10px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+            <button type="submit" class="btn btn-primary" style="background-color: #007bff; border-color: #007bff; font-weight: bold; padding: 10px 20px; border-radius: 5px;">
                 Save Changes
             </button>
-            <a href="{% url 'custom_admin:main_categories' %}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; font-weight: bold; padding: 10px 20px; color: white; text-decoration: none;">
+            <a href="{% url 'custom_admin:main_categories' %}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; font-weight: bold; padding: 10px 20px; color: white; text-decoration: none; border-radius: 5px;">
                 Cancel
             </a>
         </div>
@@ -52,7 +52,9 @@
         if (this.files && this.files.length > 0) {
             fileNameDisplay.textContent = this.files[0].name;
         } else {
-            fileNameDisplay.textContent = '';
+            // If no file is selected, revert to showing the current file name if it exists
+            const currentImageName = "{% if form.instance.image %}{{ form.instance.image.name }}{% endif %}";
+            fileNameDisplay.textContent = currentImageName ? "Current: " + currentImageName : "";
         }
     });
 </script>

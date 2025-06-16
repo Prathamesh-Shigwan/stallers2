@@ -17,6 +17,8 @@ urlpatterns = [
     path('api/daily-sales/', views.daily_sales_data, name='daily_sales_data'),  # Daily sales API
     path('api/weekly-orders/', views.weekly_order_data, name='weekly_order_data'),
     path('api/monthly-sales/', views.monthly_sales_data, name='monthly_sales_data'),
+    path('export-orders-excel/', views.export_orders_excel, name='export_orders_excel'),
+    path('export_orders_summary_excel/', views.export_orders_summary_excel, name='export_orders_summary_excel'),
 
     path('login/', LoginView.as_view(template_name='admin/login.html'), name='admin_login'),
     path('logout/', LogoutView.as_view(), name='admin_logout'),
@@ -63,6 +65,7 @@ urlpatterns = [
     path('orders/add/', views.add_order_view, name='add_order'),
     path('orders/edit/<int:pk>/', views.edit_order_view, name='edit_order'),
     path('orders/delete/<int:pk>/', views.delete_order_view, name='delete_order'),
+    path('orders/<int:pk>/update-status/', views.update_order_status_view, name='update_order_status'),
 
     path('cart/', views.cart_list_view, name='cart_list'),
     path('cart/add/', views.add_cart_view, name='add_cart'),
@@ -111,6 +114,8 @@ urlpatterns = [
     path('dashboard/download/daily-sales/', views.download_daily_sales_report, name='download_daily_sales_report'),
     path('dashboard/download/monthly-sales/', views.download_monthly_sales_report, name='download_monthly_sales_report'),
 
-
+    path('site-content/', views.site_content_list, name='site_content_list'),
+    path('site-content/manage/', views.site_content_create_or_update, name='site_content_manage'),
+    path('site-content/delete/', views.site_content_delete, name='site_content_delete'),
     ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -1,73 +1,170 @@
 {% extends "custom_admin/base_site.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0" style="font-weight: 600;">Product Variants</h2>
-        <div class="d-flex gap-2">
-            <a href="{% url 'custom_admin:add_variant' %}" class="btn btn-success">Add Variant</a>
-            <a href="{% url 'custom_admin:upload_variants' %}" class="btn btn-secondary">Bulk Upload</a>
-            <a href="{% url 'custom_admin:generate_all_variant_labels' %}" class="btn btn-dark">
-    Download All Tags (ZIP)
-</a>
-        </div>
+<div class="container mt-4" style="border: 2px solid black; padding: 20px; border-radius: 8px;">
+    {# Row 1: Page Title #}
+    <div class="d-flex justify-content-center justify-content-md-start mb-3">
+        <h2 class="mb-0" style="font-weight: 600; color: #343a40;">Product Variants</h2>
     </div>
 
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>Image</th>
-                <th>Variant ID</th>
-                <th>Product</th>
-                <th>Color</th>
-                <th>Gender</th>
-                <th>Sizes</th>
-                <th>Total Stock</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for variant in variants %}
-            <tr>
-                <td>
-                    {% if variant.image %}
-                        <img src="{{ variant.image.url }}" alt="Variant Image" width="50" height="50" style="border-radius: 4px; object-fit: cover;">
-                    {% else %}
-                        <span class="text-muted">No Image</span>
-                    {% endif %}
-                </td>
-                <td>{{ variant.vid }}</td>
-                <td>{{ variant.product.name }}</td>
-                <td>{{ variant.color|title }}</td>
-                <td>{{ variant.gender|capfirst }}</td>
-                <td>
-                    {% for option in variant.size_options.all %}
-                        <div>
-                            <strong>{{ option.size }}</strong>: ₹{{ option.price }}
-                            {% if option.old_price %}<s>₹{{ option.old_price }}</s>{% endif %}
-                            — Stock: {{ option.stock_quantity }}
-                        </div>
-                    {% empty %}
-                        <em class="text-muted">No Sizes</em>
-                    {% endfor %}
-                </td>
-                <td>{{ variant.total_stock }}</td>
-                <td>
-                    <a href="{% url 'custom_admin:edit_variant' variant.pk %}" class="btn btn-sm btn-primary">Edit</a>
-                    <a href="{% url 'custom_admin:delete_variant' variant.pk %}" class="btn btn-sm btn-danger">Delete</a>
-                    {% if variant.size_options.all %}
+    {# Row 2: Action Buttons (Aligned to the right) #}
+    <div class="d-flex justify-content-center justify-content-md-end mb-3 gap-2 flex-wrap">
+        <a href="{% url 'custom_admin:add_variant' %}" class="btn btn-success" style="background-color: #28a745; border-color: #28a745; font-weight: bold;">Add Variant</a>
+        <a href="{% url 'custom_admin:upload_variants' %}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; font-weight: bold; color: white;">Bulk Upload</a>
+        <a href="{% url 'custom_admin:generate_all_variant_labels' %}" class="btn btn-dark" style="background-color: #343a40; border-color: #343a40; font-weight: bold; color: white;">
+            Download All Tags (ZIP)
+        </a>
+    </div>
+
+    {# Row 3: Filters and Search Section - Using Bootstrap Grid for better responsiveness #}
+    <form method="GET" class="row g-2 mb-3 align-items-center"> {# g-2 adds gutter (gap) between columns #}
+        {# Search Input Group #}
+        <div class="col-12 col-md-auto flex-grow-1"> {# Col for mobile full width, auto for desktop #}
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" placeholder="Search ID, Product, or Color" value="{{ query|default:'' }}"
+                       style="border: 1px solid #ced4da; height:36px; max-width:200px;">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary" style="background-color: #007bff; border-color: #007bff; color: white;">Search</button>
+                </div>
+            </div>
+        </div>
+
+        {# Product Filter Dropdown #}
+        <div class="col-12 col-md-auto"> {# Col for mobile full width, auto for desktop #}
+            <select name="product" class="form-select" onchange="this.form.submit()"
+                    style="border: 1px solid #ced4da; border-radius: 0.25rem; padding: 0.375rem 2.25rem 0.375rem 0.75rem; height: calc(1.5em + 0.75rem + 2px); color: #495057; background-color: #fff; background-image: url(&quot;data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e&quot;); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px; -webkit-appearance: none; -moz-appearance: none; appearance: none;">
+                <option value="">Filter by Product</option>
+                {% for prod in products_for_filter %}
+                <option value="{{ prod.id }}" {% if prod.id|stringformat:"s" == product_filter %}selected{% endif %}>
+                    {{ prod.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {# Gender Filter Dropdown #}
+        <div class="col-12 col-md-auto"> {# Col for mobile full width, auto for desktop #}
+            <select name="gender" class="form-select" onchange="this.form.submit()"
+                    style="border: 1px solid #ced4da; border-radius: 0.25rem; padding: 0.375rem 2.25rem 0.375rem 0.75rem; height: calc(1.5em + 0.75rem + 2px); color: #495057; background-color: #fff; background-image: url(&quot;data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e&quot;); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 16px 12px; -webkit-appearance: none; -moz-appearance: none; appearance: none;">
+                <option value="">Filter by Gender</option>
+                {% for choice_value, choice_label in gender_choices %}
+                <option value="{{ choice_value }}" {% if choice_value == gender_filter %}selected{% endif %}>
+                    {{ choice_label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {# Clear Filters Button #}
+        {% if filters_active %}
+            <div class="col-12 col-md-auto"> {# Col for mobile full width, auto for desktop #}
+                <a href="{% url 'custom_admin:variant_list' %}" class="btn btn-warning w-100">Clear Filters</a>
+            </div>
+        {% endif %}
+    </form>
+
+
+    <div class="table-responsive">
+        <table class="table table-striped" style="border: 1px solid black;">
+            <thead class="table-dark" style="background-color: #343a40; color: white;">
+                <tr>
+                    <th style="border: 1px solid black;">Image</th>
+                    <th style="border: 1px solid black;">
+                        <a href="?sort_by=vid{% if sort_by == 'vid' and order == 'asc' %}&order=desc{% else %}&order=asc{% endif %}{% if query %}&q={{ query }}{% endif %}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if gender_filter %}&gender={{ gender_filter }}{% endif %}"
+                           style="text-decoration: none; color: inherit;">
+                            Variant ID
+                            {% if sort_by == 'vid' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    <th style="border: 1px solid black;">
+                        <a href="?sort_by=product__name{% if sort_by == 'product__name' and order == 'asc' %}&order=desc{% else %}&order=asc{% endif %}{% if query %}&q={{ query }}{% endif %}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if gender_filter %}&gender={{ gender_filter }}{% endif %}"
+                           style="text-decoration: none; color: inherit;">
+                            Product
+                            {% if sort_by == 'product__name' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    <th style="border: 1px solid black;">
+                        <a href="?sort_by=color{% if sort_by == 'color' and order == 'asc' %}&order=desc{% else %}&order=asc{% endif %}{% if query %}&q={{ query }}{% endif %}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if gender_filter %}&gender={{ gender_filter }}{% endif %}"
+                           style="text-decoration: none; color: inherit;">
+                            Color
+                            {% if sort_by == 'color' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    <th style="border: 1px solid black;">
+                        <a href="?sort_by=gender{% if sort_by == 'gender' and order == 'asc' %}&order=desc{% else %}&order=asc{% endif %}{% if query %}&q={{ query }}{% endif %}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if gender_filter %}&gender={{ gender_filter }}{% endif %}"
+                           style="text-decoration: none; color: inherit;">
+                            Gender
+                            {% if sort_by == 'gender' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    <th style="border: 1px solid black;">Sizes</th>
+                    <th style="border: 1px solid black;">
+                        <a href="?sort_by=total_stock_display{% if sort_by == 'total_stock_display' and order == 'asc' %}&order=desc{% else %}&order=asc{% endif %}{% if query %}&q={{ query }}{% endif %}{% if product_filter %}&product={{ product_filter }}{% endif %}{% if gender_filter %}&gender={{ gender_filter }}{% endif %}"
+                           style="text-decoration: none; color: inherit;">
+                            Total Stock
+                            {% if sort_by == 'total_stock_display' %}{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}{% endif %}
+                        </a>
+                    </th>
+                    <th style="border: 1px solid black;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variant in variants %}
+                <tr>
+                    <td style="border: 1px solid black;">
+                        {% if variant.image %}
+                            <img src="{{ variant.image.url }}" alt="Variant Image" width="50" height="50" style="border-radius: 4px; object-fit: cover;">
+                        {% else %}
+                            <span class="text-muted">No Image</span>
+                        {% endif %}
+                    </td>
+                    <td style="border: 1px solid black;">{{ variant.vid }}</td>
+                    <td style="border: 1px solid black;">{{ variant.product.name }}</td>
+                    <td style="border: 1px solid black;">{{ variant.color|title }}</td>
+                    <td style="border: 1px solid black;">{{ variant.gender|capfirst }}</td>
+                    <td style="border: 1px solid black;">
                         {% for option in variant.size_options.all %}
-                            <a href="{% url 'custom_admin:generate_variant_label' variant.vid option.size %}" class="btn btn-sm btn-outline-dark mb-1">
-                                Tag ({{ option.size }})
-                            </a>
+                            <div>
+                                <strong>{{ option.size }}</strong>: ₹{{ option.price }}
+                                {% if option.old_price %}<s>₹{{ option.old_price }}</s>{% endif %}
+                                — Stock: {{ option.stock_quantity }}
+                            </div>
+                        {% empty %}
+                            <em class="text-muted">No Sizes</em>
                         {% endfor %}
-                    {% else %}
-                        <span class="text-muted">No Tag</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </td>
+                    <td style="border: 1px solid black;">
+                        {{ variant.total_stock_display|default:"0" }}
+                    </td>
+                    <td style="border: 1px solid black;">
+                        <div class="d-flex flex-column flex-sm-row flex-wrap gap-1">
+                            <a href="{% url 'custom_admin:edit_variant' variant.pk %}" class="btn btn-sm btn-primary w-100 w-sm-auto" style="background-color: #007bff; border-color: #007bff; font-weight: bold;">Edit</a>
+                            <a href="{% url 'custom_admin:delete_variant' variant.pk %}" class="btn btn-sm btn-danger w-100 w-sm-auto" onclick="return confirm('Are you sure you want to delete this variant?');" style="background-color: #dc3545; border-color: #dc3545; font-weight: bold;">Delete</a>
+                            {% if variant.size_options.all %}
+                                {% for option in variant.size_options.all %}
+                                    <a href="{% url 'custom_admin:generate_variant_label' variant.vid option.size %}" class="btn btn-sm btn-outline-dark w-100 w-sm-auto" style="border-color: #343a40; color: #343a40; font-weight: bold;">
+                                        Tag ({{ option.size }})
+                                    </a>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted w-100 w-sm-auto">No Tag</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center" style="border: 1px solid black;">
+                        {% if filters_active %}
+                            No product variants found for your applied filters.
+                        {% else %}
+                            No product variants found.
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

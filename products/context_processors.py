@@ -1,4 +1,4 @@
-from .models import CartItem, Cart
+from .models import CartItem, Cart, SiteContent
 from .models import MainCategory
 
 
@@ -19,3 +19,12 @@ def categories_processor(request):
     return {
         'main_categories': main_categories,
     }
+
+
+def site_content(request):
+    try:
+        content = SiteContent.objects.first()
+    except SiteContent.DoesNotExist:
+        content = None # Or create a default instance if preferred
+
+    return {'site_content': content}

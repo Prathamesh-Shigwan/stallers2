@@ -43,7 +43,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
 
-    
+
     <!-- Place favicon.ico in the root directory -->
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/logo/STELLAR_logo.svg' %}">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -85,15 +85,21 @@
 
     <!-- Body main wrapper start -->
     <div class="wrapper">
-
+{% if site_content %}
 <div class="promo-strip">
   <div class="promo-text-wrapper">
     <div class="promo-text">
-      Flat 10% Off on Watches | Use code: SYLVIO10
+      {# Check if promo_strip_text exists and display it, otherwise show a default #}
+      {% if site_content.promo_strip_text %}
+        {{ site_content.promo_strip_text }}
+      {% else %}
+        Flat 10% Off on Watches | Use code: SYLVIO10 {# Fallback default text #}
+      {% endif %}
     </div>
   </div>
   <button class="promo-close" onclick="this.parentElement.style.display='none'">&times;</button>
 </div>
+{% endif %}
 
 <style>
   .promo-strip {
@@ -118,6 +124,8 @@
     display: inline-block;
     padding-left: 100%;
     animation: scroll-left 15s linear infinite;
+    /* ADDED: Ensure a minimum width to prevent collapse, if content is empty */
+    min-width: 100%; /* Ensures it always takes at least 100% of its parent's width */
   }
 
   @keyframes scroll-left {
@@ -142,16 +150,17 @@
   }
 </style>
 
-        <header id="htc__header" class="htc__header__area header--3" style="margin-top:160px">
+        <header id="htc__header" class="htc__header__area header--3" style="margin-top:150px;">
             <!-- Start Mainmenu Area -->
-            <div id="sticky-header-with-topbar" class="mainmenu__wrap sticky__header">
+            <div id="sticky-header-with-topbar" class="mainmenu__wrap sticky__header" style="border-bottom: 1px solid rgba(0, 0, 0, 0.1); box-shadow: 0 1px 4px rgba(0,0,0,0.05); z-index: 9999;">
+
                 <div class="container-fluid">
                     <div class="row">
                         <div class="menumenu__container clearfix">
                             <div class="col-md-2 col-xs-6 col-sm-6">
                                 <div class="logo">
                                     <a href="{% url 'home' %}">
-                                        <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="logo">
+                                        <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="logo" style="max-height: 40px;" >
                                     </a>
                                 </div>
                             </div>
@@ -403,7 +412,7 @@
                                         <div class="footer__top">
                                             <div class="ft__logo">
                                                 <a href="{% url 'home' %}">
-                                                    <img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="logo">
+                                                    <img src="{% static 'images/logo/STELLAR_logo_white.svg' %}" alt="logo">
                                                 </a>
                                             </div>
                                             <div class="ft__address__wrap">

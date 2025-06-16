@@ -31,8 +31,7 @@
     <div class="sidenav-header">
       <i class="fas fa-times p-3 cursor-pointer text-dark opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
       <a class="navbar-brand px-4 py-3 m-0" target="_blank">
-        <img src="{% static 'img/logo-ct-dark.png' %}" class="navbar-brand-img" width="26" height="26" alt="main_logo">
-        <span class="ms-1 text-sm text-dark">Stallars</span>
+        <img src="{% static 'img/STELLAR_logo_white.svg' %}" class="navbar-brand-img" width="150" height="100" alt="main_logo">
       </a>
     </div>
     <hr class="horizontal dark mt-0 mb-2">
@@ -95,6 +94,7 @@
       <li><a class="dropdown-item" href="{% url 'custom_admin:coupon_list' %}">Discount Coupon</a></li>
       <li><a class="dropdown-item" href="{% url 'custom_admin:customer_list' %}">Customers</a></li>
       <li><a class="dropdown-item" href="{% url 'custom_admin:site_settings_list' %}">Shipping Charge</a></li>
+      <li><a class="dropdown-item" href="{% url 'custom_admin:site_content_list' %}">Shipping Content</a></li>
       <li><a class="dropdown-item" href="{% url 'custom_admin:user_addresses' user.id %}">Address</a></li>
     </ul>
   </li>

@@ -1,7 +1,7 @@
 from django import forms
-from products.models import MainCategory, SubCategory, Product, ExtraImages, \
+from products.models import MainCategory, SubCategory, Product, \
     ProductVariant, VariantExtraImage, Order, Cart, \
-    Wishlist, BannerImage, About, SiteSettings, VariantSizeOption, DiscountCode
+    Wishlist, BannerImage, About, SiteSettings, VariantSizeOption, DiscountCode, SiteContent
 
 from django.forms import inlineformset_factory
 from accounts.models import User, Profile
@@ -84,21 +84,7 @@ class ProductForm(forms.ModelForm):
         self.fields['sub_category'].label_from_instance = lambda obj: f"{obj.title} ({obj.main_category.title})"
 
 
-class ExtraImagesForm(forms.ModelForm):
-    class Meta:
-        model = ExtraImages
-        fields = ['id', 'image']
-        widgets = {
-            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-        }
 
-ExtraImagesFormSet = inlineformset_factory(
-    Product,
-    ExtraImages,
-    form=ExtraImagesForm,
-    extra=3,
-    can_delete=True
-)
 
 class ProductVariantForm(forms.ModelForm):
     class Meta:
@@ -161,6 +147,7 @@ class OrderForm(forms.ModelForm):
             'shipping_address2', 'shipping_city', 'shipping_state',
             'shipping_zipcode', 'shipping_country', 'shipping_phone',
             'expected_delivery',
+            'expected_delivery_time',
             'feedback_note'
         ]
         widgets = {
@@ -271,4 +258,24 @@ class DiscountCodeForm(forms.ModelForm):
             'used_by': forms.SelectMultiple(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'auto_apply': forms.CheckboxInput(),
             'is_stackable': forms.CheckboxInput(),
+        }
+
+
+class SiteContentForm(forms.ModelForm):
+    """
+    Form for creating and updating SiteContent.
+    """
+    class Meta:
+        model = SiteContent
+        fields = [
+            'discount_popup_title',
+            'discount_popup_subtitle',
+            'discount_popup_email_note',
+            'promo_strip_text',
+        ]
+        widgets = {
+            'discount_popup_title': forms.TextInput(attrs={'class': 'form-control'}),
+            'discount_popup_subtitle': forms.TextInput(attrs={'class': 'form-control'}),
+            'discount_popup_email_note': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'promo_strip_text': forms.TextInput(attrs={'class': 'form-control'}),
         }

@@ -2,167 +2,519 @@
 
 {% block content %}
 <style>
-    .custom-file-upload {
-        display: inline-block;
-        padding: 8px 16px;
-        cursor: pointer;
-        background-color: #e0e0e0;
-        color: #333;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-weight: 500;
-        margin-bottom: 10px;
+    /* --- General Body & Container Styling --- */
+    body {
+        background-color: #f4f7f6; /* Light background for the entire page */
+        font-family: 'Arial', sans-serif; /* Consistent font */
     }
 
-    input[type="file"] {
-        display: none;
+    .container {
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
+
+    h2 {
+        color: #212529; /* Darker heading color */
+        margin-bottom: 2.5rem; /* More space below main title */
+    }
+
+    /* --- Main Form Container Border --- */
+    .form-container-with-border {
+        border: 1px solid #000; /* Solid black border for the entire form area */
+        padding: 25px; /* Slightly increased padding inside the main form container */
+        background-color: #ffffff; /* White background for the form */
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Slightly softer shadow */
+        /* INCREASED MAX-WIDTH TO ALLOW MORE SPACE FOR COLUMNS */
+        max-width: 1200px; /* Increased from 900px to allow more room */
+        margin: 0 auto; /* Center the form */
+    }
+
+    /* --- Column Section Styling (for Variant Details & Size Options) --- */
+    .column-section {
+        border: 1px solid #e9ecef; /* Lighter grey border for column sections */
+        padding: 20px; /* Increased padding inside column sections */
+        margin-bottom: 20px; /* Space between sections if stacked on smaller screens */
+        border-radius: 6px; /* Slightly more rounded corners */
+        background-color: #fdfdfd; /* Off-white background for sections */
+        height: 100%; /* Makes columns fill vertical space */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Adjust column padding to prevent borders from clashing */
+    .row > div[class*="col-"] {
+        padding: 0 10px; /* Standard horizontal padding for Bootstrap columns */
+    }
+
+    .row {
+        margin: 0 -10px; /* Compensate for column padding */
+    }
+
+    /* --- Form Section Titles --- */
+    .form-section-title {
+        font-size: 1.35rem; /* Slightly larger title */
+        font-weight: 700; /* Bolder font weight */
+        margin-bottom: 25px; /* More space below section title */
+        color: #343a40;
+        padding-bottom: 12px; /* More padding below the title text */
+        border-bottom: 1px solid #dee2e6; /* Slightly darker bottom border for titles */
+    }
+
+    /* --- Styled Input Fields (General - for Product, Color, Gender) --- */
+    .styled-input {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc; /* Light grey border for the field's container */
+        border-radius: 4px;
+    }
+
+    .styled-input label.form-label {
+        font-weight: 600; /* Make labels a bit bolder */
+        color: #495057; /* Slightly darker label color */
+        margin-bottom: 5px; /* Space between label and input */
     }
 
     .styled-input input,
     .styled-input textarea,
     .styled-input select {
         width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #ccc;
+        padding: 10px 12px; /* Slightly more padding for input text */
+        border: 1px solid black; /* Solid black border for the input elements */
         border-radius: 6px;
-        font-size: 14px;
+        font-size: 1rem; /* Standard font size */
+        color: #343a40; /* Input text color */
+        background-color: #fff; /* White background for inputs */
+
+        /* Focus state styling */
+        outline: none; /* Remove default browser outline */
+        box-shadow: none; /* Remove Bootstrap's default focus shadow if present */
+        transition: border-color 0.2s ease-in-out, border-width 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth transition */
     }
 
-    .styled-input {
-        margin-bottom: 20px;
+    .styled-input input:focus,
+    .styled-input textarea:focus,
+    .styled-input select:focus {
+        border-color: #007bff; /* Blue border on focus */
+        border-width: 2px; /* Make the border a bit thicker on focus */
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Subtle blue glow on focus */
     }
 
+    /* --- Custom File Upload Button --- */
+    .custom-file-upload {
+        display: inline-block;
+        padding: 8px 16px;
+        cursor: pointer;
+        background-color: #e9ecef; /* Lighter background for button */
+        color: #495057; /* Darker text for button */
+        border: 1px solid #6c757d; /* Darker grey border for the button */
+        border-radius: 4px;
+        font-weight: 500;
+        margin-bottom: 10px;
+        transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .custom-file-upload:hover {
+        background-color: #dee2e6; /* Slightly darker on hover */
+    }
+
+    .custom-file-upload:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    input[type="file"] {
+        display: none; /* Hide default file input */
+    }
+
+    /* File label display (e.g., "Not selected", "Current: file.jpg") */
+    .form-text.text-muted {
+        font-size: 0.875rem; /* Standard small text size */
+        color: #6c757d !important; /* Ensure muted color */
+        display: block; /* Make sure it's on a new line */
+        margin-top: 5px;
+    }
+    .form-text.text-muted a {
+        color: #007bff; /* Link color for current file */
+        text-decoration: none;
+    }
+    .form-text.text-muted a:hover {
+        text-decoration: underline;
+    }
+
+
+    /* Progress bar for video upload */
     .progress-bar {
         width: 0;
         height: 8px;
-        background-color: #28a745;
+        background-color: #28a745; /* Green color */
         transition: width 0.4s ease;
-        margin-top: 4px;
+        margin-top: 8px; /* More space above */
         border-radius: 4px;
     }
 
-    .form-section {
-        background-color: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 30px;
+    /* --- Formset Styling (Size Options & Extra Images) --- */
+
+    /* Size Option Row */
+    .size-option-row {
+        border: 1px solid #e9ecef; /* Light border around each size option row */
+        padding: 15px; /* Increased padding */
+        border-radius: 6px;
+        margin-bottom: 18px; /* Space between rows */
+        background-color: #ffffff; /* White background for each row */
     }
+
+    .size-option-row .styled-input {
+        /* Override general styled-input for formset fields */
+        border: none; /* Remove outer grey border for individual fields within the row */
+        padding: 0; /* Remove padding */
+        margin-bottom: 0; /* No bottom margin, let grid handle spacing */
+    }
+
+    .size-option-row .styled-input label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.9rem; /* Slightly smaller label for formset items */
+        color: #6c757d; /* Muted label color */
+        font-weight: 500;
+    }
+
+    .size-option-row .styled-input input,
+    .size-option-row .styled-input select {
+        /* Increased width of input fields within Size Options */
+        min-width: 100px; /* Ensures space for at least 6-7 characters comfortably */
+        max-width: 100%;
+        padding: 8px 10px; /* Adjusted padding for these smaller inputs */
+        font-size: 0.95rem; /* Slightly smaller font for these inputs */
+    }
+
+    /* Extra Image Formset Item */
+    .extra-image-formset-item {
+        border: 1px solid #e9ecef; /* Light border around each extra image item */
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 18px;
+        background-color: #ffffff;
+    }
+
+    .extra-image-formset-item .styled-input {
+        border: none;
+        padding: 0;
+        margin-bottom: 0;
+    }
+    .extra-image-formset-item .custom-file-upload {
+        margin-bottom: 5px; /* Less space below button in formset */
+    }
+
+
+    /* Delete Checkbox in Formsets */
+    .form-check {
+        margin-top: 15px; /* More space above checkbox */
+        display: flex;
+        align-items: center;
+        gap: 8px; /* More space between checkbox and label */
+    }
+
+    .form-check input[type="checkbox"] {
+        width: 18px; /* Slightly larger checkbox */
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .form-check label.form-check-label {
+        font-weight: 500;
+        color: #dc3545; /* Red color for delete label */
+        cursor: pointer;
+    }
+
+    /* --- Action Buttons --- */
+    .d-flex.justify-content-center {
+        padding-top: 20px; /* Space above buttons */
+    }
+
+    .btn {
+        padding: 10px 25px; /* Consistent button padding */
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 5px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
+    /* --- Alert Messages --- */
+    .alert {
+        margin-bottom: 20px;
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 0.95rem;
+    }
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
+
 </style>
 
-<div class="container mt-4" style="max-width: 800px;">
-    <h2 class="mb-4 text-center fw-bold">Add Product Variant</h2>
+<div class="container mt-4">
+    {# Determine if this is an add or edit page for the title #}
+    {% if variant_id %}
+        <h2 class="mb-4 text-center fw-bold">Edit Product Variant</h2>
+    {% else %}
+        <h2 class="mb-4 text-center fw-bold">Add Product Variant</h2>
+    {% endif %}
 
-    <form method="POST" enctype="multipart/form-data">
+
+    <form method="POST" enctype="multipart/form-data" class="form-container-with-border">
         {% csrf_token %}
 
-        {% if form.errors %}
-            <div class="alert alert-danger">Form Errors: {{ form.errors }}</div>
-        {% endif %}
-        {% if image_formset.errors %}
-            <div class="alert alert-warning">Image Form Errors: {{ image_formset.errors }}</div>
-        {% endif %}
-        {% if size_formset.errors %}
-            <div class="alert alert-warning">Size Option Errors: {{ size_formset.errors }}</div>
-        {% endif %}
-
-        <div class="form-section">
-            <div class="styled-input"><label>Product</label>{{ form.product }}</div>
-            <div class="styled-input"><label>Color</label>{{ form.color }}</div>
-            <div class="styled-input"><label>Gender</label>{{ form.gender }}</div>
-
-            <div class="styled-input">
-                <label for="id_image" class="custom-file-upload">Choose Image</label>
-                {{ form.image }}
-                <small id="image-label" class="form-text text-muted">Not selected</small>
+        {% if form.errors or image_formset.errors or size_formset.errors %}
+            <div class="alert alert-danger">
+                Please correct the errors below:
+                {% if form.errors %}
+                    <ul class="list-unstyled mb-0 mt-2">
+                        {% for field, errors in form.errors.items %}
+                            <li><strong>{{ field|capfirst }}:</strong> {{ errors|join:", " }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if image_formset.errors %}
+                    <ul class="list-unstyled mb-0 mt-2">
+                        {% for i, form_errors in image_formset.errors.items %}
+                            {% if form_errors %}
+                                <li><strong>Extra Image #{{ forloop.counter }}:</strong>
+                                    {% for field, errors in form_errors.items %}
+                                        {{ field|capfirst }}: {{ errors|join:", " }}
+                                    {% endfor %}
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {% if size_formset.errors %}
+                    <ul class="list-unstyled mb-0 mt-2">
+                        {% for i, form_errors in size_formset.errors.items %}
+                            {% if form_errors %}
+                                <li><strong>Size Option #{{ forloop.counter }}:</strong>
+                                    {% for field, errors in form_errors.items %}
+                                        {{ field|capfirst }}: {{ errors|join:", " }}
+                                    {% endfor %}
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
             </div>
+        {% endif %}
 
-            <div class="styled-input">
-                <label for="id_video" class="custom-file-upload">Choose Video</label>
-                {{ form.video }}
-                <small id="video-label" class="form-text text-muted">Not selected</small>
-                <div class="progress-bar" id="videoProgressBar"></div>
-            </div>
-        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="column-section">
+                    <div class="form-section-title">Variant Details</div>
 
-        <div class="form-section">
-            <h4>Size Options</h4>
-            {{ size_formset.management_form }}
-            {% for form in size_formset %}
-                {{ form.id }}
-                <div class="row g-3 mb-3">
-                    <div class="col-md-3 styled-input"><label>Size</label>{{ form.size }}</div>
-                    <div class="col-md-3 styled-input"><label>Price</label>{{ form.price }}</div>
-                    <div class="col-md-3 styled-input"><label>Old Price</label>{{ form.old_price }}</div>
-                    <div class="col-md-3 styled-input"><label>Stock</label>{{ form.stock_quantity }}</div>
-                    {% if form.DELETE %}
-                    <div class="col-12">
-                        <div class="form-check">{{ form.DELETE }} <label class="form-check-label">Delete</label></div>
+                    <div class="styled-input">
+                        <label class="form-label" for="{{ form.product.id_for_label }}">Product</label>
+                        {{ form.product }}
                     </div>
-                    {% endif %}
+                    <div class="styled-input">
+                        <label class="form-label" for="{{ form.color.id_for_label }}">Color</label>
+                        {{ form.color }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label" for="{{ form.gender.id_for_label }}">Gender</label>
+                        {{ form.gender }}
+                    </div>
+
+                    <div class="styled-input">
+                        <label for="id_image" class="custom-file-upload">Choose Main Image</label>
+                        {{ form.image }}
+                        <small id="image-label" class="form-text text-muted">
+                            {# Display current file name if it exists #}
+                            {% if form.image.value %}
+                                {% if form.image.value.url %}<a href="{{ form.image.value.url }}" target="_blank">Current: {{ form.image.value.name }}</a>{% else %}Not selected{% endif %}
+                            {% else %}
+                                Not selected
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <div class="styled-input">
+                        <label for="id_video" class="custom-file-upload">Choose Video</label>
+                        {{ form.video }}
+                        <small id="video-label" class="form-text text-muted">
+                            {# Display current file name if it exists #}
+                            {% if form.video.value %}
+                                {% if form.video.value.url %}<a href="{{ form.video.value.url }}" target="_blank">Current: {{ form.video.value.name }}</a>{% else %}Not selected{% endif %}
+                            {% else %}
+                                Not selected
+                            {% endif %}
+                        </small>
+                        <div class="progress-bar" id="videoProgressBar"></div>
+                    </div>
+
+                    <div class="form-section-title mt-4">Extra Images</div>
+                    {{ image_formset.management_form }}
+                    {% for image_subform in image_formset %}
+                        <div class="extra-image-formset-item">
+                            {{ image_subform.id }} {# Hidden ID field for existing instances #}
+                            <div class="styled-input"> {# Re-added styled-input for consistent structure, but removed its specific border/padding below #}
+                                <label class="custom-file-upload" for="{{ image_subform.image.id_for_label }}">Choose Extra Image</label>
+                                {{ image_subform.image }}
+                                <br><small class="extra-image-label text-muted">
+                                    {# Display current file name for extra images #}
+                                    {% if image_subform.image.value %}
+                                        {% if image_subform.image.value.url %}<a href="{{ image_subform.image.value.url }}" target="_blank">Current: {{ image_subform.image.value.name }}</a>{% else %}Not selected{% endif %}
+                                    {% else %}
+                                        Not selected
+                                    {% endif %}
+                                </small>
+                            </div>
+                            {% if image_subform.DELETE %}
+                            <div class="form-check mt-2">{{ image_subform.DELETE }} <label class="form-check-label">Delete</label></div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
                 </div>
-            {% endfor %}
+            </div>
+
+            <div class="col-md-6">
+                <div class="column-section">
+                    <div class="form-section-title">Size Options</div>
+                    {{ size_formset.management_form }}
+                    {% for size_subform in size_formset %}
+                        <div class="size-option-row">
+                            {{ size_subform.id }} {# Hidden ID field for existing instances #}
+                            <div class="row g-3 mb-3 align-items-end"> {# Added align-items-end for better vertical alignment #}
+                                <div class="col-6 col-md-3 styled-input"><label class="form-label" for="{{ size_subform.size.id_for_label }}">Size</label>{{ size_subform.size }}</div>
+                                <div class="col-6 col-md-3 styled-input"><label class="form-label" for="{{ size_subform.price.id_for_label }}">Price</label>{{ size_subform.price }}</div>
+                                <div class="col-6 col-md-3 styled-input"><label class="form-label" for="{{ size_subform.old_price.id_for_label }}">Old Price</label>{{ size_subform.old_price }}</div>
+                                <div class="col-6 col-md-3 styled-input"><label class="form-label" for="{{ size_subform.stock_quantity.id_for_label }}">Stock</label>{{ size_subform.stock_quantity }}</div>
+                                {% if size_subform.DELETE %}
+                                <div class="col-12">
+                                    <div class="form-check">{{ size_subform.DELETE }} <label class="form-check-label">Delete</label></div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </div>
         </div>
 
-        <div class="form-section">
-            <h4>Extra Images</h4>
-            {{ image_formset.management_form }}
-            {% for form in image_formset %}
-                {{ form.id }}
-                <div class="styled-input">
-                    <label class="custom-file-upload" for="{{ form.image.id_for_label }}">Choose Extra Image</label>
-                    {{ form.image }}
-                    <br><small class="extra-image-label text-muted">Not selected</small>
-                    {% if form.DELETE %}
-                    <div class="form-check mt-2">{{ form.DELETE }} <label class="form-check-label">Delete</label></div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>
-
-        <div class="d-flex justify-content-between mt-4">
-            <button type="submit" class="btn btn-success">Save Variant</button>
-            <a href="{% url 'custom_admin:variant_list' %}" class="btn btn-secondary">Cancel</a>
+        <div class="d-flex justify-content-center mt-4">
+            <button type="submit" class="btn btn-success me-3" style="min-width: 120px;">Save Variant</button>
+            <a href="{% url 'custom_admin:variant_list' %}" class="btn btn-danger" style="min-width: 120px;">Cancel</a>
         </div>
     </form>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-    const updateLabel = (input, labelId) => {
-        const label = document.getElementById(labelId);
-        if (input.files.length && label) {
-            label.textContent = input.files[0].name;
+    // Function to update the file input label
+    const updateLabel = (inputElement, labelElement) => {
+        if (inputElement.files.length > 0) {
+            // New file selected
+            labelElement.textContent = inputElement.files[0].name;
+            // Also remove any 'data-initial-file-url' if a new file is chosen
+            delete inputElement.dataset.initialFileUrl;
+            delete inputElement.dataset.initialFileName;
+        } else {
+            // No new file selected, check for initial file details
+            const initialFileName = inputElement.dataset.initialFileName;
+            const initialFileUrl = inputElement.dataset.initialFileUrl;
+
+            if (initialFileName && initialFileUrl) {
+                // If it's an existing file, show its name as a link
+                labelElement.innerHTML = `<a href="${initialFileUrl}" target="_blank">Current: ${initialFileName}</a>`;
+            } else if (initialFileName) {
+                // If there's just a name but no URL (e.g., a file added but not yet saved, or a placeholder)
+                 labelElement.textContent = initialFileName;
+            } else {
+                labelElement.textContent = 'Not selected';
+            }
         }
     };
 
-    const imageInput = document.getElementById('id_image');
-    if (imageInput) {
-        imageInput.style.display = 'none';
-        imageInput.addEventListener('change', () => updateLabel(imageInput, 'image-label'));
-    }
+    // Helper to initialize file inputs
+    const initializeFileInput = (inputElement, labelElement, progressBarElement = null) => {
+        if (inputElement && labelElement) {
+            // Capture initial file name and URL for edit view
+            const currentFileLink = labelElement.querySelector('a');
+            if (currentFileLink) {
+                inputElement.dataset.initialFileName = currentFileLink.textContent.replace('Current:', '').trim();
+                inputElement.dataset.initialFileUrl = currentFileLink.href;
+            } else if (labelElement.textContent.trim() !== 'Not selected' && labelElement.textContent.trim() !== '') {
+                // For cases where there's a file name but no link (e.g., initial form data, no URL available yet)
+                inputElement.dataset.initialFileName = labelElement.textContent.trim();
+            }
 
-    const videoInput = document.getElementById('id_video');
-    const videoBar = document.getElementById('videoProgressBar');
-    if (videoInput) {
-        videoInput.style.display = 'none';
-        videoInput.addEventListener('change', () => {
-            updateLabel(videoInput, 'video-label');
-            videoBar.style.width = '0%';
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                videoBar.style.width = `${progress}%`;
-                if (progress >= 100) clearInterval(interval);
-            }, 200);
-        });
-    }
-
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-        const label = input.closest('div')?.querySelector('.extra-image-label');
-        if (label && input.id.includes('image') && input.id !== 'id_image') {
-            input.addEventListener('change', () => {
-                label.textContent = input.files.length ? input.files[0].name : 'Not selected';
+            inputElement.addEventListener('change', () => {
+                updateLabel(inputElement, labelElement);
+                if (progressBarElement) {
+                    progressBarElement.style.width = '0%'; // Reset progress bar
+                    if (inputElement.files.length > 0) {
+                        // Simulate progress bar (for actual upload, this would update dynamically)
+                        let progress = 0;
+                        const interval = setInterval(() => {
+                            progress += 10;
+                            progressBarElement.style.width = `${progress}%`;
+                            if (progress >= 100) {
+                                clearInterval(interval);
+                            }
+                        }, 100); // Faster simulation for demo
+                    }
+                }
             });
+            // Set initial label text on page load
+            updateLabel(inputElement, labelElement);
+        }
+    };
+
+    // --- Main Image Input ---
+    initializeFileInput(
+        document.getElementById('id_image'),
+        document.getElementById('image-label')
+    );
+
+    // --- Video Input ---
+    initializeFileInput(
+        document.getElementById('id_video'),
+        document.getElementById('video-label'),
+        document.getElementById('videoProgressBar')
+    );
+
+    // --- Extra Images Formset ---
+    document.querySelectorAll('.extra-image-formset-item input[type="file"]').forEach(input => {
+        const labelElement = input.closest('.extra-image-formset-item')?.querySelector('.extra-image-label');
+        if (labelElement) {
+            initializeFileInput(input, labelElement);
         }
     });
 });

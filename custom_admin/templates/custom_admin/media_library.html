@@ -1,41 +1,62 @@
 {% extends 'custom_admin/base_site.html' %}
 {% load static %}
+
 {% block content %}
-
 <div class="container mt-4">
-    <h2>Media Library</h2>
+    <h2 class="mb-4">Media Library</h2>
 
-<form method="post" enctype="multipart/form-data" class="mb-4">
-    {% csrf_token %}
-    <div class="input-group">
-        <input type="file" name="files" class="form-control" multiple required>
-        <button class="btn btn-primary" type="submit">Upload</button>
+    <!-- Upload & Search Row -->
+    <div class="row mb-4">
+        <!-- Upload Column -->
+        <div class="col-md-6">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="fileInput" class="form-label fw-bold">Select Files</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="btn btn-outline-dark mb-0">
+                            Choose Files
+                            <input type="file" name="files" id="fileInput" class="d-none" multiple required>
+                        </label>
+                        <button class="btn btn-danger" type="submit" style="margin-top:15px;">Upload</button>
+                    </div>
+                    <div id="fileLabel" class="form-text text-secondary mt-2">No file chosen</div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Search Column -->
+        <div class="col-md-6 d-flex align-items-end justify-content-md-end mt-3 mt-md-0">
+            <form method="get" style="width: 100%; max-width: 300px;">
+                <div class="input-group" style="border: 2px solid #ccc; border-radius: 6px; overflow: hidden;">
+                    <button type="submit" class="input-group-text bg-white border-0">
+                        <i class="fas fa-search text-muted"></i>
+                    </button>
+                    <input type="text" name="q" class="form-control border-0 shadow-none" placeholder="Search by file name" value="{{ request.GET.q }}">
+                </div>
+            </form>
+        </div>
     </div>
-</form>
 
-    <!-- Search Form -->
-    <form method="get" class="mb-4">
-        <input type="text" name="q" class="form-control" placeholder="Search by file name" value="{{ request.GET.q }}">
-    </form>
-
+    <!-- Uploaded Media -->
     <h4 class="mt-4">Uploaded Media</h4>
 
     {% if media_files %}
         <div class="row">
             {% for media in media_files %}
-                <div class="col-md-3 mb-4">
+                <div class="col-6 col-sm-3 col-md-2 col-lg-1-8 mb-4 media-thumbnail">
                     {% with media.file.url|lower as file_url %}
                         {% if file_url|slice:"-4:" == ".jpg" or file_url|slice:"-5:" == ".jpeg" or file_url|slice:"-4:" == ".png" or file_url|slice:"-4:" == ".gif" %}
-                            <img src="{{ media.file.url }}" alt="{{ media.name }}" class="img-fluid rounded border">
+                            <img src="{{ media.file.url }}" alt="{{ media.name }}" class="img-fluid rounded border w-100">
                         {% elif file_url|slice:"-5:" == ".webp" or file_url|slice:"-4:" == ".bmp" or file_url|slice:"-4:" == ".svg" or file_url|slice:"-5:" == ".tiff" %}
-                            <img src="{{ media.file.url }}" alt="{{ media.name }}" class="img-fluid rounded border">
+                            <img src="{{ media.file.url }}" alt="{{ media.name }}" class="img-fluid rounded border w-100">
                         {% elif file_url|slice:"-4:" == ".mp4" or file_url|slice:"-4:" == ".mov" or file_url|slice:"-4:" == ".avi" or file_url|slice:"-4:" == ".mkv" %}
-                            <video controls width="100%">
+                            <video controls class="w-100 rounded border">
                                 <source src="{{ media.file.url }}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         {% elif file_url|slice:"-5:" == ".webm" or file_url|slice:"-4:" == ".flv" or file_url|slice:"-4:" == ".wmv" or file_url|slice:"-4:" == ".3gp" %}
-                            <video controls width="100%">
+                            <video controls class="w-100 rounded border">
                                 <source src="{{ media.file.url }}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
@@ -57,4 +78,54 @@
     {% endif %}
 </div>
 
+<!-- JavaScript to show selected file names -->
+<script>
+    document.getElementById("fileInput").addEventListener("change", function () {
+        const fileLabel = document.getElementById("fileLabel");
+        const files = Array.from(this.files).map(file => file.name);
+        fileLabel.textContent = files.length > 0 ? files.join(', ') : "No file chosen";
+    });
+</script>
+
+<!-- Font Awesome for search icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<!-- Custom Styles -->
+<style>
+    .btn-outline-dark {
+        border: 1px solid #ccc;
+        background-color: white;
+        color: #333;
+    }
+
+    .btn-outline-dark:hover {
+        background-color: #f5f5f5;
+    }
+
+    .btn-danger {
+        background: #f31559;
+        border: none;
+    }
+
+    /* 8 items per row on large screens */
+    @media (min-width: 1200px) {
+        .col-lg-1-8 {
+            flex: 0 0 auto;
+            width: 12.5%;
+        }
+    }
+
+    .media-thumbnail img,
+    .media-thumbnail video {
+        height: 100px;
+        object-fit: cover;
+    }
+
+    .media-thumbnail p {
+        font-size: 12px;
+        margin-top: 5px;
+        text-align: center;
+        word-break: break-word;
+    }
+</style>
 {% endblock %}

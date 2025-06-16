@@ -1,10 +1,15 @@
 # products/views.py
-
+import io
+import base64
+import qrcode
+from PIL import Image
 
 import hmac
 import hashlib
 import json
-from django.db.models import Q, Min, OuterRef, Exists
+
+from django.core.exceptions import PermissionDenied
+from django.db.models import Q, Min, OuterRef, Exists, Avg
 
 import logging
 from django.utils import timezone
@@ -108,9 +113,10 @@ def home(request):
     sub_categories = SubCategory.objects.all().order_by('-id')[:9]
     color_choices = ProductVariant.objects.values_list('color', flat=True).distinct()
     banner_images = BannerImage.objects.filter(is_active=True)
-    blogs = Blog.objects.order_by('-created_at')[:4]
+    blogs = Blog.objects.order_by('-created_at')[:2]
     featured_products = Product.objects.filter(featured=True).order_by('-id')[:8]
     main_categories = MainCategory.objects.prefetch_related('subcategories').all()
+    site_content = SiteContent.objects.first() # Fetch the site content
 
     context = {
         'products': products,
@@ -119,7 +125,8 @@ def home(request):
         'banner_images': banner_images,
         'blogs': blogs,
         'featured_products': featured_products,
-        'main_categories': main_categories
+        'main_categories': main_categories,
+        'site_content': site_content,
     }
 
     return render(request, 'home.html', context)
@@ -137,25 +144,39 @@ def apply_coupon(request):
 
     try:
         discount = DiscountCode.objects.get(code=code)
+
+        # Temporarily assign to cart to check validity with current cart state
+        # (The is_valid method on DiscountCode needs a cart object)
+        cart.discount_code = discount  # Set it for validation
         if not discount.is_valid(user=request.user, cart=cart):
+            cart.discount_code = None  # If not valid, clear it
+            cart.save()  # Save to clear any previously set invalid coupon
             return JsonResponse({"success": False, "message": "Coupon is not valid."})
 
-        cart.discount_code = discount
-        cart.save()  # Just save the coupon association, don’t apply discount to total
+        # At this point, the coupon is valid. Assign and save the cart.
+        # The cart.save() will now handle updating cart.total to the discounted amount
+        # and marking the coupon as used (if you keep that logic in Cart.save).
 
-        discount_amount = cart.apply_discount()
-        try:
-            shipping = SiteSettings.objects.first().shipping_charge
-        except (SiteSettings.DoesNotExist, AttributeError):
-            shipping = Decimal('0.00')
+        # Before saving, get the discount amount that will be applied for the response
+        # We need the subtotal here to calculate the discount for the response
+        cart.subtotal = cart.calculate_subtotal()  # Ensure subtotal is fresh for calculation
+        calculated_discount_amount = cart.get_discount_amount()
 
-        final_total = cart.total - discount_amount + shipping
+        cart.discount_code = discount  # Re-assign if it was cleared for validation
+        cart.save()  # This save updates cart.total to discounted value
+
+        # Safely get shipping charge
+        site_settings = SiteSettings.objects.first()
+        shipping = site_settings.shipping_charge if site_settings else Decimal('0.00')
+
+        final_total = cart.total + shipping  # cart.total is already discounted
 
         return JsonResponse({
             "success": True,
             "message": "Coupon applied successfully!",
-            "discount": float(discount_amount),
-            "final_total": float(final_total)
+            "discount": float(calculated_discount_amount),
+            "final_total": float(final_total),
+            "cart_total_after_discount": float(cart.total)  # Show the cart's new total
         })
 
     except DiscountCode.DoesNotExist:
@@ -168,20 +189,25 @@ def apply_coupon(request):
 def remove_coupon(request):
     try:
         cart = Cart.objects.get(user=request.user)
+        # To accurately reverse the usage tracking, you might need to handle it here
+        # or have a more sophisticated usage tracking system.
+        # For simplicity, we'll just remove the discount code.
+        # Note: If used_by is marked in Cart.save(), removing it here won't "un-mark" it.
         cart.discount_code = None
-        cart.save()
+        cart.save()  # This save will recalculate total based on subtotal
 
-        try:
-            shipping = SiteSettings.objects.first().shipping_charge
-        except (SiteSettings.DoesNotExist, AttributeError):
-            shipping = Decimal('0.00')
+        # Safely get shipping charge
+        site_settings = SiteSettings.objects.first()
+        shipping = site_settings.shipping_charge if site_settings else Decimal('0.00')
 
-        final_total = cart.total + shipping
+
+        final_total = cart.total + shipping  # cart.total is now the subtotal
 
         return JsonResponse({
             "success": True,
             "message": "Coupon removed successfully.",
-            "final_total": float(final_total)
+            "final_total": float(final_total),
+            "cart_total_after_remove": float(cart.total)
         })
     except Cart.DoesNotExist:
         return JsonResponse({"success": False, "message": "Cart not found."})
@@ -190,23 +216,28 @@ def remove_coupon(request):
 @login_required(login_url=reverse_lazy('accounts:login'))
 @csrf_protect
 def cart_view(request):
-    cart, _ = Cart.objects.get_or_create(user=request.user, defaults={'total': Decimal('0.00')})
-    items = CartItem.objects.filter(cart=cart)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
 
-    discount = cart.apply_discount() if cart.discount_code else Decimal('0.00')
+    # Ensure cart totals are up-to-date before rendering
+    # cart.save() # This will ensure subtotal and total are calculated correctly
 
-    try:
-        shipping = SiteSettings.objects.first().shipping_charge
-    except (SiteSettings.DoesNotExist, AttributeError):
-        shipping = Decimal('0.00')
+    items = CartItem.objects.filter(cart=cart)  # Assuming CartItem model exists
 
-    final_total = cart.total - discount + shipping
+    # Get the discount amount for display
+    discount_amount_for_display = cart.get_discount_amount() if cart.discount_code else Decimal('0.00')
+
+    site_settings = SiteSettings.objects.first()
+    shipping = site_settings.shipping_charge if site_settings else Decimal('0.00')
+
+    # cart.total is already the discounted total
+    final_total = cart.total + shipping
 
     context = {
         'cart': cart,
         'items': items,
-        'total': cart.total,
-        'discount': discount,
+        'subtotal': cart.subtotal,  # Display the pre-discount total
+        'total': cart.total,  # Display the post-discount total (which is cart.total)
+        'discount': discount_amount_for_display,
         'final_total': final_total,
         'shipping': shipping,
     }
@@ -278,6 +309,7 @@ def base(request, cid=None, is_subcategory=False):
         products_page = paginator.page(paginator.num_pages)
 
     color_choices = {color[0]: color[1] for color in ProductVariant.COLOR_CHOICES}
+    site_content = SiteContent.objects.first() # Fetch the site content
 
     context = {
         'products': products_page,
@@ -285,7 +317,7 @@ def base(request, cid=None, is_subcategory=False):
         'sub_categories': sub_categories,
         'color_choices': color_choices,
         'color_hex_map': COLOR_HEX_MAP,
-
+        'site_content': site_content,
     }
     return render(request, 'base11.html', context)
 
@@ -389,18 +421,105 @@ def product_list(request):
     return render(request, 'product-list.html', context)
 
 
+
 def product_details(request, pid):
     product = get_object_or_404(Product, pid=pid)
-    variants = ProductVariant.objects.filter(product=product).prefetch_related('extra_images')
-    variant = variants.first()  # ✅ default variant to show first
+    variants = product.variants.prefetch_related('extra_images', 'size_options')
+    default_variant = variants.first()
+
+    reviews_list = product.reviews.filter(user__isnull=False).order_by('-date')
+    average_rating = reviews_list.aggregate(Avg('rating')).get('rating__avg') or 0
+
+    user_review = None
+    other_reviews = reviews_list
+
+    # --- NEW: Check if the user can add a review ---
+    can_add_review = False
+    if request.user.is_authenticated:
+        user_review = reviews_list.filter(user=request.user).first()
+        if user_review:
+            other_reviews = reviews_list.exclude(id=user_review.id)
+
+        # Check if the user has a delivered order for this product
+        if Order.objects.filter(
+                user=request.user,
+                status='delivered',
+                items__product=product
+        ).exists():
+            can_add_review = True
+    # --- END OF NEW LOGIC ---
+
+    paginator = Paginator(other_reviews, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    is_editing = False
+    review_to_edit = None
+    edit_review_id = request.GET.get('edit')
+    if edit_review_id and request.user.is_authenticated:
+        try:
+            review_to_edit = ProductsReviews.objects.get(id=edit_review_id, user=request.user)
+            if can_add_review:  # Can only edit if they have permission to review in the first place
+                is_editing = True
+        except ProductsReviews.DoesNotExist:
+            messages.error(request, "Review not found or you don't have permission to edit it.")
+
+    review_form = ReviewForm(instance=review_to_edit) if is_editing else ReviewForm()
 
     context = {
         'product': product,
         'variants': variants,
-        'variant': variant,  # ✅ pass default variant to template
+        'variant': default_variant,
+        'page_obj': page_obj,
+        'average_rating': average_rating,
+        'review_count': reviews_list.count(),
+        'review_form': review_form,
+        'user_review': user_review,
+        'is_editing': is_editing,
+        'review_to_edit': review_to_edit,
+        'can_add_review': can_add_review,  # <-- Pass the permission to the template
     }
     return render(request, 'product-details.html', context)
 
+
+# This view for adding a review remains the same
+@login_required
+def add_review(request, pid):
+    product = get_object_or_404(Product, pid=pid)
+    if request.method == 'POST':
+        if ProductsReviews.objects.filter(user=request.user, product=product).exists():
+            messages.error(request, 'You have already submitted a review for this product.')
+            return redirect('products:product_details', pid=pid)
+
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            new_review = form.save(commit=False)
+            new_review.user = request.user
+            new_review.product = product
+            if Order.objects.filter(user=request.user, items__product=product, status='completed').exists():
+                new_review.verified_purchase = True
+            new_review.save()
+            messages.success(request, 'Your review has been submitted successfully!')
+            return redirect('products:product_details', pid=pid)
+    return redirect('products:product_details', pid=pid)
+
+
+# This view for editing (handling the POST) also remains
+@login_required
+def edit_review(request, review_id):
+    review = get_object_or_404(ProductsReviews, id=review_id)
+    if review.user != request.user:
+        raise PermissionDenied
+
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your review has been updated successfully!')
+            return redirect('products:product_details', pid=review.product.pid)
+    else:
+        # If not POST, just redirect to the product page with the edit flag
+        return redirect(f"{reverse('products:product_details', args=[review.product.pid])}?edit={review.id}")
 
 def get_variant_data(request, variant_id):
     try:
@@ -574,56 +693,110 @@ def remove_from_cart(request, item_id):
 
 
 @require_POST
+@login_required # Add this decorator if your update_cart_item should require login
 def update_cart_item(request):
-    data = json.loads(request.body)
-    item_id = data['item_id']
-    quantity = int(data['quantity'])
-
-    cart_item = get_object_or_404(CartItem, id=item_id)
-    cart_item.quantity = quantity
-
-    # Handle variant and size-specific pricing correctly
-    if cart_item.product_variant:
-        if cart_item.selected_size:
-            size_option = cart_item.product_variant.size_options.filter(size=cart_item.selected_size).first()
-            if size_option:
-                cart_item.line_total = size_option.price * Decimal(quantity)
-            else:
-                return JsonResponse({'success': False, 'error': 'Invalid size for variant'}, status=400)
-        else:
-            return JsonResponse({'success': False, 'error': 'Size not selected for variant'}, status=400)
-    else:
-        if cart_item.selected_size:
-            size_option = cart_item.product.size_options.filter(size=cart_item.selected_size).first()
-            if size_option:
-                cart_item.line_total = size_option.price * Decimal(quantity)
-            else:
-                return JsonResponse({'success': False, 'error': 'Invalid size for product'}, status=400)
-        else:
-            cart_item.line_total = cart_item.product.price * Decimal(quantity)
-
-    cart_item.save()
-
-    cart = cart_item.cart
-    cart.total = sum(item.line_total for item in cart.cartitem_set.all())
-    cart.save()
-
     try:
-        shipping = SiteSettings.objects.first().shipping_charge
-    except AttributeError:
-        shipping = Decimal('0.00')
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        new_quantity = int(data.get('quantity'))
 
-    final_total = cart.total + shipping
+        if new_quantity <= 0:
+            return JsonResponse({'success': False, 'error': 'Quantity must be at least 1.'}, status=400)
 
-    return JsonResponse({
-        'success': True,
-        'new_line_total': float(cart_item.line_total),
-        'cart_total': float(cart.total),
-        'shipping': float(shipping),
-        'final_total': float(final_total)
-    })
+        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+
+        # --- Determine the correct VariantSizeOption for stock and price ---
+        price_to_use = Decimal('0.00')
+        stock_to_check = 0
+        size_option_obj = None # To hold the found VariantSizeOption object
+
+        if cart_item.product_variant:
+            # This path is for products with variants (like your screenshot)
+            if not cart_item.selected_size:
+                return JsonResponse({'success': False, 'error': 'Size not selected for variant item.'}, status=400)
+
+            size_option_obj = cart_item.product_variant.size_options.filter(size=cart_item.selected_size).first()
+
+            if not size_option_obj:
+                return JsonResponse({'success': False, 'error': 'Invalid size option found for variant.'}, status=400)
+
+            price_to_use = size_option_obj.price
+            stock_to_check = size_option_obj.stock_quantity
+
+        else:
+            # This path is for products without a specific ProductVariant linked to CartItem.
+            # Assuming if a product doesn't have a variant, it must still have a default
+            # VariantSizeOption linked through its 'variants' relationship if it's sellable.
+            # OR, if Product model directly has 'price' and 'stock_quantity' fields,
+            # you'd use them here. Based on your model, Product itself doesn't have 'price'
+            # or 'inventory.stock_quantity'. This 'else' block might be problematic
+            # if non-variant products aren't correctly structured with default variants.
+            # If ALL your products eventually have a VariantSizeOption (even a default "One Size"),
+            # you might need to adjust how non-variant products are added to the cart
+            # to ensure `product_variant` and `selected_size` are always set.
+
+            # Attempt to find a default size option if no variant is attached to CartItem
+            # This assumes that even a simple product has at least one variant and size option
+            default_variant = cart_item.product.variants.first()
+            if default_variant:
+                default_size_option = default_variant.size_options.filter(size=cart_item.selected_size).first() # Use selected_size from cart_item
+                if not default_size_option:
+                     # Fallback to any size option if selected_size doesn't match default variant's size
+                    default_size_option = default_variant.size_options.first()
+
+                if default_size_option:
+                    size_option_obj = default_size_option
+                    price_to_use = size_option_obj.price
+                    stock_to_check = size_option_obj.stock_quantity
+                else:
+                    return JsonResponse({'success': False, 'error': 'No default size option found for product.'}, status=400)
+            else:
+                 # If product has no variants at all, this implies it's not set up correctly for sale.
+                 return JsonResponse({'success': False, 'error': 'Product has no sellable variants.'}, status=400)
+
+
+        # --- Stock Quantity Check (Applies to both variant and non-variant paths) ---
+        if new_quantity > stock_to_check:
+            return JsonResponse({
+                'success': False,
+                'error': f'Insufficient stock. Only {stock_to_check} available.'
+            }, status=400)
+
+        # --- Update CartItem ---
+        cart_item.quantity = new_quantity
+        cart_item.line_total = price_to_use * Decimal(new_quantity)
+        cart_item.save()
+
+        # --- Recalculate Cart Totals ---
+        cart = cart_item.cart
+        # `cart.save()` itself updates `subtotal` and `total` based on items
+        # and applies/recalculates discount.
+        cart.save()
+
+        # --- Get current discount and shipping for JSON response ---
+        discount_amount_for_display = cart.get_discount_amount() if cart.discount_code else Decimal('0.00')
+        shipping = SiteSettings.objects.first().shipping_charge if SiteSettings.objects.exists() else Decimal('0.00')
+        final_total = cart.total + shipping
+
+        return JsonResponse({
+            'success': True,
+            'new_line_total': float(cart_item.line_total),
+            'cart_subtotal': float(cart.subtotal), # The pre-discount total
+            'cart_total_after_discount': float(cart.total), # The discounted product total
+            'discount': float(discount_amount_for_display), # The discount amount
+            'shipping': float(shipping),
+            'final_total': float(final_total) # Grand total including shipping
+        })
+
+    except Exception as e:
+        # Catch any unexpected errors and log them for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in update_cart_item for item_id {item_id}, quantity {new_quantity}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'error': 'An unexpected error occurred. Please try again.'}, status=500)
 
 @login_required
+@csrf_protect
 def save_info(request):
     try:
         billing_address = BillingAddress.objects.filter(user=request.user).first()
@@ -660,37 +833,19 @@ def save_info(request):
         messages.error(request, 'Error accessing the save info page. Please try again.')
         return redirect('home')
 
-@login_required
-@csrf_protect
-def save_info(request):
-    billing_address = BillingAddress.objects.filter(user=request.user).first()
-    shipping_address = ShippingAddress.objects.filter(user=request.user).first()
-
-    if request.method == 'POST':
-        billing_form = BillingForm(request.POST, instance=billing_address)
-        shipping_form = ShippingForm(request.POST, instance=shipping_address)
-
-        if billing_form.is_valid() and shipping_form.is_valid():
-            saved_billing = billing_form.save(commit=False)
-            saved_billing.user = request.user
-            saved_billing.save()
-
-            saved_shipping = shipping_form.save(commit=False)
-            saved_shipping.user = request.user
-            saved_shipping.save()
-
-            messages.success(request, "Billing and shipping information saved successfully.")
-        else:
-            messages.error(request, "There was an error saving your information. Please try again.")
-
-    return redirect('products:checkout')
 
 @login_required
 @csrf_protect
 def checkout(request):
     try:
-        # Get or create cart for the logged-in user
-        cart, _ = Cart.objects.get_or_create(user=request.user, defaults={'total': Decimal('0.00')})
+        cart, _ = Cart.objects.get_or_create(user=request.user,
+                                             defaults={'total': Decimal('0.00'), 'subtotal': Decimal('0.00')})
+
+        # IMPORTANT: Ensure the cart's totals (subtotal, total) are up-to-date
+        # before retrieving them. The `cart.save()` method in the Cart model
+        # handles this. So calling it once here ensures fresh values.
+        cart.save()
+
         items = CartItem.objects.filter(cart=cart)
 
         if not items.exists():
@@ -700,27 +855,38 @@ def checkout(request):
         billing_address = BillingAddress.objects.filter(user=request.user).first()
         shipping_address = ShippingAddress.objects.filter(user=request.user).first()
 
-        # ✅ Calculate discount without altering cart.total directly
-        discount = cart.apply_discount()
-        shipping = SiteSettings.objects.first().shipping_charge if SiteSettings.objects.exists() else Decimal('0.00')
-        final_total = cart.total - discount + shipping
+        # --- CORRECTED LINE ---
+        # Get the discount amount for display. cart.get_discount_amount() does not alter cart.total.
+        discount_amount_for_display = cart.get_discount_amount() if cart.discount_code else Decimal('0.00')
+        # --- END CORRECTION ---
 
-        # ✅ Calculate unit price for display
+        shipping = SiteSettings.objects.first().shipping_charge if SiteSettings.objects.exists() else Decimal('0.00')
+
+        # --- CORRECTED LINE ---
+        # cart.total already holds the discounted total (from cart.save() above)
+        final_total = cart.total + shipping
+        # --- END CORRECTION ---
+
+        # Calculate unit price for display on checkout page
         for item in items:
             item.unit_price = item.line_total / item.quantity if item.quantity > 0 else Decimal('0.00')
 
         if request.method == 'POST' and 'process_payment' in request.POST:
             try:
-                amount = int(float(final_total) * 100)  # Razorpay expects amount in paise
+                # Ensure the final_total is re-evaluated with current cart data
+                # (though it should be fresh from cart.save() at the start)
+                cart.save()  # Recalculate just in case anything changed
+                current_final_total_for_payment = cart.total + shipping
+                amount = int(float(current_final_total_for_payment) * 100)  # Razorpay expects amount in paise
+
                 razorpay_order = client.order.create({
                     "amount": amount,
                     "currency": "INR",
                     "payment_capture": "1"
                 })
 
-                # Save order details in session
                 request.session['razorpay_order_id'] = razorpay_order['id']
-                request.session['amount'] = float(amount)
+                request.session['amount'] = float(amount)  # Store amount in paise
 
                 context = {
                     'razorpay_order_id': razorpay_order['id'],
@@ -734,11 +900,13 @@ def checkout(request):
                 return render(request, 'payment.html', context)
 
             except Exception as e:
-                logger.error(f"Exception during Razorpay order creation: {e}")
-                messages.error(request, "An error occurred during the payment process.")
+                logger.error(f"Exception during Razorpay order creation for user {request.user.id}: {e}")
+                messages.error(request, "An error occurred during the payment process. Please try again.")
                 return redirect('products:checkout')
 
         # Prepare forms
+        # Assuming BillingForm and ShippingForm are imported
+        from .forms import BillingForm, ShippingForm  # Add this import if not already there
         billing_form = BillingForm(instance=billing_address)
         shipping_form = ShippingForm(instance=shipping_address)
 
@@ -746,9 +914,10 @@ def checkout(request):
         context = {
             'cart': cart,
             'items': items,
-            'total': cart.total,
-            'discount': discount,
-            'final_total': final_total,
+            'subtotal': cart.subtotal,  # Display the pre-discount total
+            'total': cart.total,  # Display the post-discount cart total (before shipping)
+            'discount': discount_amount_for_display,  # The calculated discount amount
+            'final_total': final_total,  # The grand total including shipping
             'shipping': shipping,
             'billing_form': billing_form,
             'shipping_form': shipping_form,
@@ -756,7 +925,7 @@ def checkout(request):
         return render(request, 'checkout.html', context)
 
     except Exception as e:
-        logger.error(f"Error in checkout process: {e}")
+        logger.error(f"Error loading checkout page for user {request.user.id}: {e}")
         messages.error(request, "Error loading checkout page.")
         return redirect('home')
 
@@ -770,7 +939,7 @@ def process_order(request):
         signature = request.POST.get('razorpay_signature')
 
         if not payment_id or not razorpay_order_id or not signature:
-            messages.error(request, "Payment was canceled.")
+            messages.error(request, "Payment was canceled or details are missing.")
             return redirect('products:cart_view')
 
         params_dict = {
@@ -787,10 +956,29 @@ def process_order(request):
 
             user = request.user
             cart = Cart.objects.get(user=user)
+
+            # Ensure cart's totals are up-to-date just before creating order
+            cart.save()
+
             billing_address = BillingAddress.objects.filter(user=user).first()
             shipping_address = ShippingAddress.objects.filter(user=user).first()
 
-            discount_amount = cart.apply_discount() if cart.discount_code else Decimal('0.00')
+            if not billing_address:
+                logger.error(f"Error processing order for user {user.id}: Billing address missing.")
+                messages.error(request,
+                               "Your billing information is missing. Please update it before placing the order.")
+                return redirect('products:checkout')
+
+            if not shipping_address:
+                logger.error(f"Error processing order for user {user.id}: Shipping address missing.")
+                messages.error(request,
+                               "Your shipping information is missing. Please update it before placing the order.")
+                return redirect('products:checkout')
+
+            # --- CORRECTED LINE ---
+            # Get the discount amount for the order record (it's already factored into cart.total)
+            discount_amount_for_order = cart.get_discount_amount() if cart.discount_code else Decimal('0.00')
+            # --- END CORRECTION ---
             discount_code_value = cart.discount_code.code if cart.discount_code else None
 
             with transaction.atomic():
@@ -800,12 +988,16 @@ def process_order(request):
                     if item.product_variant:
                         variant_size = item.product_variant.size_options.filter(size=item.selected_size).first()
                         if not variant_size or item.quantity > variant_size.stock_quantity:
-                            messages.error(request, f"Insufficient stock for {item.product_variant.color} - {item.selected_size}.")
+                            messages.error(request,
+                                           f"Insufficient stock for {item.product_variant.color} - {item.selected_size}.")
+                            transaction.set_rollback(True)  # Rollback in case of stock issue
                             return redirect('products:cart_view')
                         price = variant_size.price
                     else:
-                        if item.quantity > item.product.stock_quantity:
+                        # Assuming product.stock_quantity exists directly on Product model
+                        if not hasattr(item.product, 'stock_quantity') or item.quantity > item.product.stock_quantity:
                             messages.error(request, f"Insufficient stock for {item.product.name}.")
+                            transaction.set_rollback(True)
                             return redirect('products:cart_view')
                         price = item.product.price
 
@@ -829,18 +1021,19 @@ def process_order(request):
                     shipping_zipcode=shipping_address.shipping_zipcode,
                     shipping_country=shipping_address.shipping_country,
                     shipping_phone=shipping_address.shipping_phone,
-                    total=cart.total,
+                    total=cart.total,  # cart.total already holds the discounted amount
                     payment_method=payment_method,
-                    discount=discount_amount,
+                    discount=discount_amount_for_order,  # Use the calculated discount amount for the order record
                     discount_code=discount_code_value,
                 )
 
                 for item in items:
+                    # Determine the correct price for the order item based on variant/product
                     if item.product_variant:
                         variant_size = item.product_variant.size_options.filter(size=item.selected_size).first()
-                        price = variant_size.price
+                        item_price_at_order = variant_size.price
                     else:
-                        price = item.product.price
+                        item_price_at_order = item.product.price  # Assuming Product has 'price' if no variant
 
                     OrderItem.objects.create(
                         order=order,
@@ -848,21 +1041,25 @@ def process_order(request):
                         product_variant=item.product_variant,
                         user=user,
                         quantity=item.quantity,
-                        price=price,
+                        price=item_price_at_order,  # Use the price at the time of order creation
                         selected_size=item.selected_size
                     )
 
+                    # Update stock
                     if item.product_variant:
                         variant_size.stock_quantity -= item.quantity
                         variant_size.save()
                     else:
-                        item.product.stock_quantity -= item.quantity
-                        item.product.save()
+                        # Assuming product.stock_quantity exists directly on Product model
+                        if hasattr(item.product, 'stock_quantity'):
+                            item.product.stock_quantity -= item.quantity
+                            item.product.save()
 
-                    item.delete()
+                    item.delete()  # Remove item from cart
 
-                cart.total = Decimal('0.00')
-                cart.discount_code = None
+                cart.subtotal = Decimal('0.00')  # Reset subtotal
+                cart.total = Decimal('0.00')  # Reset total
+                cart.discount_code = None  # Clear discount
                 cart.save()
 
                 send_order_email(request, order.id)
@@ -874,11 +1071,13 @@ def process_order(request):
             messages.error(request, "Payment verification failed. Please try again.")
             return redirect('products:cart_view')
         except Exception as e:
-            logger.error(f"Error placing order: {e}")
-            messages.error(request, "An error occurred during the payment process.")
+            logger.error(f"Error placing order for user {user.id}: {e}",
+                         exc_info=True)  # exc_info=True for full traceback
+            messages.error(request, "An error occurred during the payment process. Please try again.")
             return redirect('products:cart_view')
 
     return redirect('home')
+
 
 @login_required
 @csrf_protect
@@ -887,6 +1086,10 @@ def place_order_cod(request):
         try:
             user = request.user
             cart = Cart.objects.get(user=user)
+
+            # Ensure cart's totals are up-to-date just before creating order
+            cart.save()
+
             items = CartItem.objects.filter(cart=cart)
 
             if not items.exists():
@@ -896,7 +1099,21 @@ def place_order_cod(request):
             billing_address = BillingAddress.objects.filter(user=user).first()
             shipping_address = ShippingAddress.objects.filter(user=user).first()
 
-            discount_amount = cart.apply_discount() if cart.discount_code else Decimal('0.00')
+            if not billing_address:
+                logger.error(f"Error processing COD order for user {user.id}: Billing address missing.")
+                messages.error(request,
+                               "Your billing information is missing. Please update it before placing the order.")
+                return redirect('products:checkout')
+
+            if not shipping_address:
+                logger.error(f"Error processing COD order for user {user.id}: Shipping address missing.")
+                messages.error(request,
+                               "Your shipping information is missing. Please update it before placing the order.")
+                return redirect('products:checkout')
+
+            # --- CORRECTED LINE ---
+            discount_amount_for_order = cart.get_discount_amount() if cart.discount_code else Decimal('0.00')
+            # --- END CORRECTION ---
             discount_code_value = cart.discount_code.code if cart.discount_code else None
 
             with transaction.atomic():
@@ -904,12 +1121,16 @@ def place_order_cod(request):
                     if item.product_variant:
                         variant_size = item.product_variant.size_options.filter(size=item.selected_size).first()
                         if not variant_size or item.quantity > variant_size.stock_quantity:
-                            messages.error(request, f"Insufficient stock for {item.product_variant.color} - {item.selected_size}.")
+                            messages.error(request,
+                                           f"Insufficient stock for {item.product_variant.color} - {item.selected_size}.")
+                            transaction.set_rollback(True)
                             return redirect('products:cart_view')
                         price = variant_size.price
                     else:
-                        if item.quantity > item.product.stock_quantity:
+                        # Assuming product.stock_quantity exists directly on Product model
+                        if not hasattr(item.product, 'stock_quantity') or item.quantity > item.product.stock_quantity:
                             messages.error(request, f"Insufficient stock for {item.product.name}.")
+                            transaction.set_rollback(True)
                             return redirect('products:cart_view')
                         price = item.product.price
 
@@ -933,19 +1154,20 @@ def place_order_cod(request):
                     shipping_zipcode=shipping_address.shipping_zipcode,
                     shipping_country=shipping_address.shipping_country,
                     shipping_phone=shipping_address.shipping_phone,
-                    total=cart.total,
+                    total=cart.total,  # cart.total already holds the discounted amount
                     payment_method="Cash on Delivery",
                     status="pending",
-                    discount=discount_amount,
+                    discount=discount_amount_for_order,  # Use the calculated discount amount for the order record
                     discount_code=discount_code_value,
                 )
 
                 for item in items:
+                    # Determine the correct price for the order item based on variant/product
                     if item.product_variant:
                         variant_size = item.product_variant.size_options.filter(size=item.selected_size).first()
-                        price = variant_size.price
+                        item_price_at_order = variant_size.price
                     else:
-                        price = item.product.price
+                        item_price_at_order = item.product.price  # Assuming Product has 'price' if no variant
 
                     OrderItem.objects.create(
                         order=order,
@@ -953,21 +1175,25 @@ def place_order_cod(request):
                         product_variant=item.product_variant,
                         user=user,
                         quantity=item.quantity,
-                        price=price,
+                        price=item_price_at_order,  # Use the price at the time of order creation
                         selected_size=item.selected_size
                     )
 
+                    # Update stock
                     if item.product_variant:
                         variant_size.stock_quantity -= item.quantity
                         variant_size.save()
                     else:
-                        item.product.stock_quantity -= item.quantity
-                        item.product.save()
+                        # Assuming product.stock_quantity exists directly on Product model
+                        if hasattr(item.product, 'stock_quantity'):
+                            item.product.stock_quantity -= item.quantity
+                            item.product.save()
 
-                    item.delete()
+                    item.delete()  # Remove item from cart
 
-                cart.total = Decimal('0.00')
-                cart.discount_code = None
+                cart.subtotal = Decimal('0.00')  # Reset subtotal
+                cart.total = Decimal('0.00')  # Reset total
+                cart.discount_code = None  # Clear discount
                 cart.save()
 
                 send_order_email(request, order.id)
@@ -976,7 +1202,7 @@ def place_order_cod(request):
             return redirect('products:order_tracking')
 
         except Exception as e:
-            logger.error(f"Error placing COD order: {e}")
+            logger.error(f"Error placing COD order for user {user.id}: {e}", exc_info=True)
             messages.error(request, "An error occurred while placing your order. Please try again.")
             return redirect('products:checkout')
 
@@ -1105,20 +1331,22 @@ def payment_failed(request):
     return render(request, 'products/payment_failed.html')  # Customize this template
 
 
+
 @login_required
 def send_order_email(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     items = OrderItem.objects.filter(order=order)
+
     billing_address = BillingAddress.objects.filter(user=request.user).first()
-    shipping_address = BillingAddress.objects.filter(user=request.user).first()
+    shipping_address = ShippingAddress.objects.filter(user=request.user).first()
 
     site_settings = SiteSettings.objects.first()
     shipping_charge = site_settings.shipping_charge if site_settings else Decimal('0.00')
-    final_total = order.total + shipping_charge
+    final_total = order.total + shipping_charge  # `order.total` is discounted product total, this is grand total
 
     invoice_link = request.build_absolute_uri(reverse('products:order_invoice', args=[order.id]))
 
-    subject = f" Your Order Confirmation with Stellars - Order #{order.id}"
+    subject = f" Your Order Confirmation with Stellars - Order #{order.order_id}"
     html_content = render_to_string('order_email.html', {
         'order': order,
         'items': items,
@@ -1127,8 +1355,7 @@ def send_order_email(request, order_id):
         'shipping_charge': shipping_charge,
         'final_total': final_total,
         'user': request.user,
-        'invoice_link': invoice_link,  # Pass the invoice link to the email template
-
+        'invoice_link': invoice_link,
     })
     text_content = strip_tags(html_content)
     from_email = settings.DEFAULT_FROM_EMAIL
@@ -1141,12 +1368,11 @@ def send_order_email(request, order_id):
     return JsonResponse({'success': True, 'message': 'Email sent successfully'})
 
 
-
 @login_required(login_url=reverse_lazy('accounts:login'))
 def order_tracking(request):
     user_orders = Order.objects.filter(user=request.user)
     context = {'orders': user_orders}
-    return render(request, 'order_tracking.html', context)
+    return render(request, 'order_tracking2.html', context)
 
 @csrf_exempt
 def update_order_status(request):
@@ -1199,43 +1425,82 @@ def order_details(request, order_id):
     return render(request, 'order_details.html', context)
 
 
+def generate_product_qr_code_base64(request, product_pid):
+    """
+    Generates a QR code for a product's detail page and returns it as a base64 data URL.
+    """
+    try:
+        # Construct the absolute URL to the product detail page
+        product_url = request.build_absolute_uri(reverse('products:product_details', args=[product_pid]))
 
+        # Create QR code
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=4,  # Adjust size as needed, 4-6 is usually good for invoices
+            border=2,  # Border around the QR code
+        )
+        qr.add_data(product_url)
+        qr.make(fit=True)
+
+        # Create an image from the QR Code instance
+        img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+
+        # Save image to a BytesIO object
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        # Return as a data URL
+        return f"data:image/png;base64,{img_str}"
+    except Exception as e:
+        # Log any errors (e.g., product_pid not found, image generation issue)
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error generating QR code for product_pid {product_pid}: {e}", exc_info=True)
+        return None  # Return None if generation fails
+
+
+# --- Modify order_invoice view ---
 @login_required
 def order_invoice(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     items = OrderItem.objects.filter(order=order)
 
-    for item in items:
-        # Assign price for each item based on variant size
-        if item.product_variant:
-            variant_size = item.product_variant.size_options.filter(size=item.selected_size).first()
-            item.unit_price = variant_size.price if variant_size else Decimal('0.00')
-        else:
-            item.unit_price = item.product.price
+    # Order.total already stores the discounted product total (including tax).
+    # Order.discount stores the absolute discount amount that was applied.
 
-    discount = order.discount or Decimal('0.00')
-    discount_code = order.discount_code or None
+    actual_discount_amount = order.discount or Decimal('0.00')
+    discount_code_value = order.discount_code or None
 
-    # Get shipping charge from site settings
     shipping_charge = SiteSettings.objects.first().shipping_charge if SiteSettings.objects.exists() else Decimal('0.00')
 
-    # Taxable amount based on 18% GST
-    taxable_amount = order.total * Decimal('0.18')
-    total_excluding = order.total - taxable_amount
-    final_total = (order.total - discount) + shipping_charge
-
-    # Determine if it's an interstate transaction
+    # --- REVISED CALCULATIONS (as per previous correction) ---
+    product_total_after_discount_and_inclusive_tax = order.total
+    tax_rate = Decimal('0.18')
+    product_total_excluding_tax = product_total_after_discount_and_inclusive_tax / (Decimal('1') + tax_rate)
+    tax_amount = product_total_after_discount_and_inclusive_tax - product_total_excluding_tax
+    grand_total_to_pay = product_total_after_discount_and_inclusive_tax + shipping_charge
     shipping_state = order.shipping_state.strip().lower()
-    is_interstate = shipping_state != "maharashtra"  # Replace with your business base state if different
+    is_interstate = shipping_state != "maharashtra".lower()
+
+    # --- NEW: Generate QR code for each item ---
+    for item in items:
+        # The product object associated with the OrderItem
+        product_obj = item.product
+        if product_obj:
+            item.qr_code_data = generate_product_qr_code_base64(request, product_obj.pid)
+        else:
+            item.qr_code_data = None # No QR if product link is not valid
 
     context = {
         'order': order,
-        'items': items,
+        'items': items, # items now have 'qr_code_data' attribute
         'billing_address': {
             'full_name': order.billing_full_name,
             'email': order.billing_email,
             'address1': order.billing_address1,
-            'address2': order.billing_address2,
+            'address2': order.billing_address2 or '',
             'city': order.billing_city,
             'state': order.billing_state,
             'zipcode': order.billing_zipcode,
@@ -1246,24 +1511,24 @@ def order_invoice(request, order_id):
             'full_name': order.shipping_full_name,
             'email': order.shipping_email,
             'address1': order.shipping_address1,
-            'address2': order.shipping_address2,
+            'address2': order.shipping_address2 or '',
             'city': order.shipping_city,
             'state': order.shipping_state,
             'zipcode': order.shipping_zipcode,
             'country': order.shipping_country,
             'phone': order.shipping_phone,
         },
-        'discount': discount,
-        'discount_code': discount_code,
+        'actual_discount_amount': actual_discount_amount,
+        'discount_code': discount_code_value,
         'shipping_charge': shipping_charge,
-        'taxable_amount': taxable_amount,
-        'total_excluding': total_excluding,
-        'final_total': final_total,
+        'tax_amount': tax_amount,
+        'product_total_excluding_tax': product_total_excluding_tax,
+        'product_total_after_discount_and_inclusive_tax': product_total_after_discount_and_inclusive_tax,
+        'grand_total_to_pay': grand_total_to_pay,
         'is_interstate': is_interstate,
     }
 
     return render(request, 'invoice_temp.html', context)
-
 
 def request_order_cancel(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)

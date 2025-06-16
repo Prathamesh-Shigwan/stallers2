@@ -24,6 +24,8 @@ urlpatterns = [
     path('product_details/', views.product_grid, name='product_details'),
     path('product_details/<str:pid>/', views.product_details, name='product_details'),
     path('get_variant_data/<int:variant_id>/', views.get_variant_data, name='get_variant_data'),
+    path('review/add/<str:pid>/', views.add_review, name='add_review'),
+    path('review/edit/<int:review_id>/', views.edit_review, name='edit_review'),
 
     path('wishlist/', views.wishlist, name='wishlist'),
     path('add_to_wishlist/', views.add_to_wishlist, name='add_to_wishlist'),

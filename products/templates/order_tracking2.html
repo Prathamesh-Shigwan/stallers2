@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders - Tracking{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{# Link to your custom CSS file for order tracking styles. This line is technically redundant if CSS is embedded, but good practice to keep for external file usage. #}
+<link rel="stylesheet" href="{% static 'css/order_tracking_styles.css' %}">
+{# You likely have jQuery loaded in base.html, if not, ensure it's there before any scripts that use it #}
+
+
+<div class="container mt-5">
+    <h2 class="mb-4">My Orders</h2>
+
+    {% if orders %}
+        {% for order in orders %}
+        <div class="order-card mb-5 p-4 border rounded shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>
+                    <a href="{% url 'products:order_details' order.id %}" class="text-decoration-none">
+                        Order Details [ Order ID - {{ order.order_id }} ]
+                    </a>
+                </h3>
+                {# Use current date if expected_delivery is in the past for completed/delivered orders #}
+                <h4 class="mb-0">
+                    Delivered By -
+                    {% if order.status == 'delivered' or order.status == 'completed' %}
+                        {{ order.updated_at|date:"M d, Y" }}
+                    {% else %}
+                        {{ order.expected_delivery|date:"M d, Y" }}
+                    {% endif %}
+                </h4>
+            </div>
+
+            <div class="order-process-bar">
+                <ul class="steps">
+                    {# Step 1: Pending #}
+                    <li class="step {% if order.status == 'pending' or order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' or order.status == 'completed' or order.status == 'cancelled' or order.status == 'returned' or order.status == 'replaced' %}active{% endif %}" data-status="pending">
+                        <div class="icon-wrapper">
+                            <img height="45px" src="{% static 'images/icons/pendingb.png' %}" alt="Pending">
+                        </div>
+                        <span>Pending</span>
+                    </li>
+
+                    {# Step 2: Processing #}
+                    <li class="step {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' or order.status == 'completed' or order.status == 'cancelled' or order.status == 'returned' or order.status == 'replaced' %}active{% endif %}" data-status="processing">
+                        <div class="icon-wrapper">
+                            <img height="45px" src="{% static 'images/icons/work-process.png' %}" alt="Processing">
+                        </div>
+                        <span>Processing</span>
+                    </li>
+
+                    {# Step 3: Shipped #}
+                    <li class="step {% if order.status == 'shipped' or order.status == 'delivered' or order.status == 'completed' or order.status == 'cancelled' or order.status == 'returned' or order.status == 'replaced' %}active{% endif %}" data-status="shipped">
+                        <div class="icon-wrapper">
+                            <img height="45px" src="{% static 'images/icons/shipped.png' %}" alt="Shipped">
+                        </div>
+                        <span>Shipped</span>
+                    </li>
+
+                    {# Step 4: Delivered #}
+                    <li class="step {% if order.status == 'delivered' or order.status == 'completed' or order.status == 'cancelled' or order.status == 'returned' or order.status == 'replaced' %}active{% endif %}" data-status="delivered">
+                        <div class="icon-wrapper">
+                            <img height="45px" src="{% static 'images/icons/delivered.png' %}" alt="Delivered">
+                        </div>
+                        <span>Delivered</span>
+                    </li>
+
+                    {# Step 5: Final Status (Cancelled, Returned, Replaced, Completed) #}
+                    {# ONLY RENDER THIS STEP IF THE ORDER HAS REACHED ONE OF THESE FINAL STATES #}
+                    {% if order.status == 'cancelled' or order.status == 'returned' or order.status == 'replaced' or order.status == 'completed' %}
+                    <li class="step final-step active"> {# This step should always be 'active' if it's rendered #}
+                        <div class="icon-wrapper">
+                            {% if order.status == 'cancelled' %}
+                                <img height="45px" src="{% static 'images/icons/cancelled.png' %}" alt="Cancelled">
+                            {% elif order.status == 'returned' %}
+                                <img height="45px" src="{% static 'images/icons/returned.png' %}" alt="Returned">
+                            {% elif order.status == 'replaced' %}
+                                <img height="45px" src="{% static 'images/icons/returned.png' %}" alt="Replaced">
+                            {% elif order.status == 'completed' %}
+                                <img height="45px" src="{% static 'images/icons/box.png' %}" alt="Completed">
+                            {% endif %}
+                        </div>
+                        <span>
+                            {% if order.status == 'cancelled' %}Cancelled
+                            {% elif order.status == 'returned' %}Returned
+                            {% elif order.status == 'replaced' %}Replaced
+                            {% elif order.status == 'completed' %}Order Completed
+                            {% endif %}
+                        </span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            You have no orders to track yet. Start shopping!
+        </div>
+    {% endif %}
+</div>
+
+<style>
+/* IMPORTANT:
+   It's best practice to keep CSS in a separate .css file (like order_tracking_styles.css).
+   I'm including it here in the <style> tag as per your last request,
+   but for production, move this to the static file.
+*/
+
+
+/* Base container for each order's bar */
+.order-card {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+    padding: 20px;
+}
+
+/* Overall bar styles */
+.order-process-bar {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.order-process-bar .steps {
+  display: flex;
+  justify-content: space-between;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+
+/* Individual step styling */
+.order-process-bar .step {
+  flex: 1;
+  position: relative;
+  padding: 10px 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #999;
+  text-transform: capitalize;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1; /* Ensure step content is above lines */
+}
+
+/* Icon wrapper to allow images to be centered */
+.order-process-bar .step .icon-wrapper {
+    width: 60px; /* Consistent size for circles */
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ebebeb; /* Default circle background */
+    border-radius: 50%;
+    margin-bottom: 8px;
+    border: 3px solid #ebebeb; /* Default border color */
+    transition: all 0.3s ease;
+    z-index: 2; /* Ensure icon is above line */
+    position: relative; /* For z-index context */
+}
+
+.order-process-bar .step img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: grayscale(100%); /* Desaturate inactive icons */
+    transition: filter 0.3s ease;
+}
+
+/* Active state for steps and their icons/text */
+.order-process-bar .step.active {
+    color: #3fd9b2; /* Active text color */
+}
+
+.order-process-bar .step.active .icon-wrapper {
+    background-color: #3fd9b2; /* Active circle background */
+    border-color: #3fd9b2; /* Active border color */
+}
+
+.order-process-bar .step.active img {
+    filter: grayscale(0%); /* Saturate active icons */
+}
+
+/* --- PROCESS BAR / LINE SEGMENT STYLING --- */
+
+/* Line comes *after* each step except the last one. */
+/* This positions the line from the right edge of the current circle to the left edge of the next. */
+.order-process-bar .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 41px; /* Vertically center the line based on icon-wrapper's position */
+    left: calc(50% + 30px); /* Start from right edge of current circle (50% of li + half icon width) */
+    right: calc(-50% + 30px); /* End at left edge of next circle (-50% of li + half icon width) */
+    width: auto; /* Defined by left/right */
+    height: 4px;
+    background-color: #ebebeb; /* Inactive line color */
+    z-index: 0; /* Behind icons */
+}
+
+/* Line active color: when a step is active, the line *after it* should be active */
+.order-process-bar .step.active:not(:last-child)::after {
+    background-color: #3fd9b2; /* Active line color */
+}
+
+/* --- Specificity fix for .final-step when active --- */
+/* Ensure the final step's icon and text are also green when active */
+.order-process-bar .step.final-step.active {
+    color: #3fd9b2; /* Apply active text color explicitly */
+}
+
+.order-process-bar .step.final-step.active .icon-wrapper {
+    background-color: #3fd9b2; /* Apply active circle background explicitly */
+    border-color: #3fd9b2; /* Apply active border color explicitly */
+}
+
+.order-process-bar .step.final-step.active img {
+    filter: grayscale(0%); /* Ensure image is saturated */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .order-process-bar .steps {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        position: static;
+    }
+
+    .order-process-bar .step {
+        width: 50%;
+        margin-bottom: 20px;
+        position: relative;
+        padding: 0;
+    }
+
+    .order-process-bar .step .icon-wrapper {
+        margin-bottom: 5px;
+    }
+
+    .order-card h3 {
+        font-size: 1.1rem;
+    }
+    .order-card h4 {
+        font-size: 0.9rem;
+    }
+
+    /* Hide horizontal line segments on smaller screens */
+    .order-process-bar .step:not(:last-child)::after {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .order-process-bar .step {
+        width: 100%;
+    }
+}
+
+</style>
+
+{% endblock %}

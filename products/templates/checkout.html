@@ -1,8 +1,15 @@
+<!DOCTYPE html>
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filters %}
 
-{% block title %}CheckOut{% endblock %}
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="csrf-token" content="{{ csrf_token }}"> {# Good practice to keep this #}
+        {% block title %}CheckOut{% endblock %}
+    </head>
+<body> {# Ensure your base.html or this template has a <body> tag #}
 
 {% block content %}
 <div class="ht__bradcaump__area bradcaump--2">
@@ -28,7 +35,6 @@
     </div>
 </div>
 
-<!-- Start Checkout Area -->
 <div class="checkout-wrap ptb--70">
     <div class="container">
         <div class="row">
@@ -37,7 +43,6 @@
                     <div class="accordion-list">
                         <div class="accordion">
 
-                            <!-- FORM 1: Update Billing and Shipping Info -->
                             <form method="post" action="{% url 'products:save_info' %}">
                                 {% csrf_token %}
                                 <div class="accordion__title">Billing Information</div>
@@ -57,7 +62,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Checkbox for copying billing to shipping -->
                                 <div class="col-md-12">
                                     <label style="display: flex; align-items: center; margin: 15px 0;">
                                         <input type="checkbox" id="sameAsBilling" style="margin-right: 10px;">
@@ -98,7 +102,6 @@
                 </div>
             </div>
 
-            <!-- RIGHT SIDE ORDER SUMMARY -->
             <div class="col-md-4">
                 <div class="order-details">
                     <h5 class="order-details__title">Your Order</h5>
@@ -125,7 +128,7 @@
                     <p style="margin: 5px 0; font-size: 14px; color: #666;">
                         Size: {{ item.selected_size }}
                     </p>
-                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">₹ {{ item.product.price }}</div>
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">₹ {{ item.product.price|floatformat:2 }}</div>
                 {% endif %}
                 <div style="font-size: 14px; color: #888; margin-bottom: 5px;">x {{ item.quantity }}</div>
                 <div style="background: #f7f7f7; padding: 5px 10px; border-radius: 5px; font-size: 13px; color: #777;">
@@ -142,29 +145,29 @@
 
                     <div class="order-details__count" style="margin-top: 20px;">
                         <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <h5>Sub Total</h5><span class="price">&#8377; {{ total }}</span>
+                            <h5>Sub Total</h5><span class="price">&#8377; {{ subtotal|floatformat:2 }}</span> {# Changed to use 'subtotal' #}
                         </div>
                         <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <h5>Shipping</h5><span class="price">&#8377; {{ shipping }}</span>
+                            <h5>Shipping</h5><span class="price">&#8377; {{ shipping|floatformat:2 }}</span>
                         </div>
                         <div class="order-details__count__single" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                            <h5>Coupon Discount</h5><span class="price">- &#8377; {{ cart.discount_code.discount_amount|default_if_none:"0.00" }}</span>
+                            <h5>Coupon Discount</h5><span class="price">- &#8377; {{ discount|default:"0.00"|floatformat:2 }}</span> {# Changed to use 'discount' #}
                         </div>
                     </div>
 
                     <div class="ordre-details__total" style="display: flex; justify-content: space-between; align-items: center; font-size: 20px; font-weight: 700; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
-                        <h5>Order Total</h5><span class="price">&#8377; {{ final_total }}</span>
+                        <h5>Order Total</h5><span class="price">&#8377; {{ final_total|floatformat:2 }}</span>
                     </div>
 
                     <div style="background: #f0f0f0; margin-top: 15px; padding: 10px 15px; border-radius: 6px; font-size: 14px; color: #555;">
-                        Including ₹ {{ total|mul:0.18|floatformat:2 }} tax (18% on product subtotal)
+                        {# Tax calculation should be based on subtotal #}
+                        <em>Including ₹ {{ subtotal|mul:0.18|floatformat:2 }} tax (18% on product subtotal)</em>
                     </div>
 
-                    <!-- PAYMENT BUTTONS -->
                     <div class="row" style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
                         <form method="post" action="{% url 'products:checkout' %}" style="width: 100%; text-align: center;">
                             {% csrf_token %}
-                            <input type="hidden" name="final_total" value="{{ final_total }}">
+                            <input type="hidden" name="final_total" value="{{ final_total|floatformat:2 }}">
                             <button type="submit" name="process_payment" style="background-color: #007bff; border: none; color: white; padding: 12px 30px; font-size: 16px; border-radius: 6px; width: 220px; font-weight: 600; cursor: pointer;">
                                 Proceed to Payment
                             </button>
@@ -183,26 +186,53 @@
     </div>
 </div>
 
-<!-- JS to auto-fill shipping if same as billing -->
 <script>
     const checkbox = document.getElementById('sameAsBilling');
     const hiddenInput = document.getElementById('same_as_billing_input');
 
-    checkbox.addEventListener('change', function () {
-        hiddenInput.value = this.checked ? 'on' : '';
+    if (checkbox) { // Check if checkbox exists before adding event listener
+        checkbox.addEventListener('change', function () {
+            hiddenInput.value = this.checked ? 'on' : '';
 
-        if (this.checked) {
-            document.getElementById('id_shipping_full_name').value = document.getElementById('id_billing_full_name').value;
-            document.getElementById('id_shipping_email').value = document.getElementById('id_billing_email').value;
-            document.getElementById('id_shipping_address1').value = document.getElementById('id_billing_address1').value;
-            document.getElementById('id_shipping_address2').value = document.getElementById('id_billing_address2').value;
-            document.getElementById('id_shipping_city').value = document.getElementById('id_billing_city').value;
-            document.getElementById('id_shipping_state').value = document.getElementById('id_billing_state').value;
-            document.getElementById('id_shipping_zipcode').value = document.getElementById('id_billing_zipcode').value;
-            document.getElementById('id_shipping_country').value = document.getElementById('id_billing_country').value;
-            document.getElementById('id_shipping_phone').value = document.getElementById('id_billing_phone').value;
-        }
-    });
+            if (this.checked) {
+                // Safely get elements and assign values, checking for existence
+                const billingFields = [
+                    'billing_full_name', 'billing_email', 'billing_address1',
+                    'billing_address2', 'billing_city', 'billing_state',
+                    'billing_zipcode', 'billing_country', 'billing_phone'
+                ];
+                const shippingFields = [
+                    'shipping_full_name', 'shipping_email', 'shipping_address1',
+                    'shipping_address2', 'shipping_city', 'shipping_state',
+                    'shipping_zipcode', 'shipping_country', 'shipping_phone'
+                ];
+
+                for (let i = 0; i < billingFields.length; i++) {
+                    const billingEl = document.getElementById(`id_${billingFields[i]}`);
+                    const shippingEl = document.getElementById(`id_${shippingFields[i]}`);
+                    if (billingEl && shippingEl) {
+                        shippingEl.value = billingEl.value;
+                    }
+                }
+            } else {
+                // Optionally clear shipping fields if unchecked and not automatically filling
+                // For a more robust solution, you might reload original shipping data if available
+                const shippingFields = [
+                    'shipping_full_name', 'shipping_email', 'shipping_address1',
+                    'shipping_address2', 'shipping_city', 'shipping_state',
+                    'shipping_zipcode', 'shipping_country', 'shipping_phone'
+                ];
+                for (let i = 0; i < shippingFields.length; i++) {
+                    const shippingEl = document.getElementById(`id_${shippingFields[i]}`);
+                    if (shippingEl) {
+                        shippingEl.value = ''; // Clear the field
+                    }
+                }
+            }
+        });
+    }
 </script>
 
 {% endblock %}
+</body>
+</html>

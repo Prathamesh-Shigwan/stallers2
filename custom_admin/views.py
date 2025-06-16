@@ -4,7 +4,8 @@ from django.db.models import Sum, Count, Q
 from django.views.decorators.http import require_POST
 from products.models import MainCategory, SubCategory, Product, CartItem, Order, OrderItem, \
     ExtraImages, ProductVariant, VariantExtraImage, Cart, CartItem, \
-    Wishlist, ShippingAddress, BillingAddress, BannerImage, About, SiteSettings, DiscountCode, VariantSizeOption,MediaLibrary
+    Wishlist, ShippingAddress, BillingAddress, BannerImage, About, SiteSettings, DiscountCode, VariantSizeOption, \
+    MediaLibrary, SiteContent
 from accounts.models import User
 from accounts.forms import UserRoleUpdateForm, ProfileForm, UserUpdateForm
 from django.http import FileResponse
@@ -17,14 +18,22 @@ from django.utils.timezone import make_aware, localtime
 from django.contrib.admin.models import LogEntry
 from django.db.models.functions import TruncDay, TruncMonth
 from django.db.models.functions import ExtractWeek, ExtractYear
-
+from decimal import Decimal
+import openpyxl
+from django.http import HttpResponse, JsonResponse
+from openpyxl.styles import Font, Alignment, PatternFill
+from decimal import Decimal # Make sure this is also there now
+from django.db.models import Prefetch, Sum, Count # Add Prefetch here!
+from django.utils.timezone import now, make_aware, localtime
+from datetime import timedelta, datetime
+import json
 from django.utils.timezone import now
 from django.db import models  # Import the models module
 from custom_admin.utils import get_recent_actions_ut  # Ensure you have this function to fetch recent actions
 from custom_admin.forms import DateRangeForm, MainCategoryForm, SubCategoryForm, \
-    ProductForm, ExtraImagesFormSet, ProductVariantForm, VariantExtraImageForm, \
+    ProductForm, ProductVariantForm, VariantExtraImageForm, \
     OrderForm, CartForm, WishlistForm, VariantSizeOptionFormSet, VariantExtraImageFormSet, \
-    BlogForm, BannerImageForm, CustomerForm, ProfileForm, AboutForm, SiteSettingsForm, DiscountCodeForm
+    BlogForm, BannerImageForm, CustomerForm, ProfileForm, AboutForm, SiteSettingsForm, DiscountCodeForm, SiteContentForm
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.forms import modelformset_factory
@@ -54,94 +63,425 @@ from products.models import ProductVariant, VariantSizeOption
 from reportlab.graphics.barcode import code128
 import zipfile
 from collections import defaultdict
+from django.utils.timezone import localdate
 
 import datetime
-
-
 def is_admin(user):
     return user.is_superuser
 
 
-@staff_member_required
 def dashboard(request):
-    # Default date range (current month)
-    today = now()
-    default_start_date = today.replace(day=1).date()  # Convert to date
-    default_end_date = today.date()  # Convert to date
+    if not request.user.is_authenticated:
+        return render(request, 'custom_admin/welcome.html', {'message': 'Please log in to view the dashboard.'})
 
-    # Process the date filter form
-    form = DateRangeForm(request.GET or None)
-    start_date = default_start_date
-    end_date = default_end_date
+    # Check if the user has the 'admin' or 'finance_manager' role
+    if request.user.role in ['admin', 'finance_manager']:
+        # Default date range (current month)
+        today = now()
+        default_start_date = today.replace(day=1).date()  # Convert to date
+        default_end_date = today.date()  # Convert to date
 
-    if form.is_valid():
-        start_date = form.cleaned_data.get('start_date') or default_start_date
-        end_date = form.cleaned_data.get('end_date') or default_end_date
+        # Process the date filter form
+        form = DateRangeForm(request.GET or None)
+        start_date = default_start_date
+        end_date = default_end_date
 
-    start_date = make_aware(datetime.datetime.combine(start_date, datetime.time.min))
-    end_date = make_aware(datetime.datetime.combine(end_date, datetime.time.max))
+        if form.is_valid():
+            start_date = form.cleaned_data.get('start_date') or default_start_date
+            end_date = form.cleaned_data.get('end_date') or default_end_date
 
-    # Total sales (sum of all orders' totals) within the date range
-    total_sales = Order.objects.filter(status='completed', created_at__range=(start_date, end_date)) \
-        .aggregate(Sum('total'))['total__sum'] or 0.00
+        start_date = make_aware(datetime.datetime.combine(start_date, datetime.time.min))
+        end_date = make_aware(datetime.datetime.combine(end_date, datetime.time.max))
 
-    # Total orders count within the date range
-    total_orders = Order.objects.filter(created_at__range=(start_date, end_date)).count()
+        # Total sales (sum of all orders' totals) within the date range
+        total_sales = Order.objects.filter(status='completed', created_at__range=(start_date, end_date)) \
+            .aggregate(Sum('total'))['total__sum'] or 0.00
 
-    # Payment methods breakdown
-    payment_methods = Order.objects.filter(created_at__range=(start_date, end_date)) \
-        .values('payment_method').annotate(count=Count('payment_method'))
+        # Total orders count within the date range
+        total_orders = Order.objects.filter(created_at__range=(start_date, end_date)).count()
 
-    # Total products count
-    total_products = Product.objects.count()
-    total_variants = ProductVariant.objects.count()
+        # Payment methods breakdown
+        payment_methods_data = Order.objects.filter(created_at__range=(start_date, end_date)) \
+            .values('payment_method').annotate(count=Count('payment_method'))
 
-    # Products in cart
-    products_in_cart = CartItem.objects.aggregate(total=Sum('quantity'))['total'] or 0
-
-    # Canceled orders count within the date range
-    canceled_orders = Order.objects.filter(status='cancelled', created_at__range=(start_date, end_date)).count()
-
-    # Returned orders count within the date range
-    returned_orders = Order.objects.filter(status='returned', created_at__range=(start_date, end_date)).count()
-
-    # Replaced orders count within the date range
-    replaced_orders = Order.objects.filter(status='replaced', created_at__range=(start_date, end_date)).count()
-
-    # Total customers
-    total_customers = User.objects.filter(is_staff=False).count()
-
-    # Total blogs
-    total_blogs = Blog.objects.count()
-
-    # Recent orders
-    recent_orders = Order.objects.select_related('user').order_by('-created_at')[:10]
-
-    # Recent actions (custom utility function to fetch admin actions)
-    recent_actions = get_recent_actions(request)
-
-    context = {
-        'form': form,
-        'total_sales': total_sales,
-        'total_orders': total_orders,
-        'payment_methods': payment_methods,  # List of payment methods with counts
-        'total_products': total_products,
-        'products_in_cart': products_in_cart,
-        'canceled_orders': canceled_orders,
-        'returned_orders': returned_orders,
-        'replaced_orders': replaced_orders,
-        'total_customers': total_customers,
-        'total_blogs': total_blogs,
-        'recent_orders': recent_orders,
-        'recent_actions': recent_actions,
-        'total_variants': total_variants,
-
-    }
-
-    return render(request, 'custom_admin/dashboard.html', context)
+        # Extracting prepaid and COD orders for the template
+        prepaid_orders = 0
+        cod_orders = 0
+        for method in payment_methods_data:
+            if method['payment_method'].lower() == 'prepaid': # Adjust as per your actual payment method names
+                prepaid_orders = method['count']
+            elif method['payment_method'].lower() == 'cash on delivery': # Adjust as per your actual payment method names
+                cod_orders = method['count']
 
 
-from django.utils.timezone import localdate
+        # Total products count
+        total_products = Product.objects.count()
+        total_variants = ProductVariant.objects.count()
+
+        # Products in cart
+        products_in_cart = CartItem.objects.aggregate(total=Sum('quantity'))['total'] or 0
+
+        # Canceled orders count within the date range
+        canceled_orders = Order.objects.filter(status='cancelled', created_at__range=(start_date, end_date)).count()
+
+        # Returned orders count within the date range
+        returned_orders = Order.objects.filter(status='returned', created_at__range=(start_date, end_date)).count()
+
+        # Replaced orders count within the date range
+        replaced_orders = Order.objects.filter(status='replaced', created_at__range=(start_date, end_date)).count()
+
+        # Total customers
+        total_customers = User.objects.filter(is_staff=False).count()
+
+        # Total blogs
+        total_blogs = Blog.objects.count()
+
+        # Recent orders
+        recent_orders = Order.objects.select_related('user').order_by('-created_at')[:10]
+
+        # Recent actions (custom utility function to fetch admin actions)
+        recent_actions = get_recent_actions(request)
+
+        context = {
+            'form': form,
+            'total_sales': total_sales,
+            'total_orders': total_orders,
+            'prepaid_orders': prepaid_orders,
+            'cod_orders': cod_orders,
+            'payment_methods': payment_methods_data,  # List of payment methods with counts
+            'total_products': total_products,
+            'products_in_cart': products_in_cart,
+            'canceled_orders': canceled_orders,
+            'returned_orders': returned_orders,
+            'replaced_orders': replaced_orders,
+            'total_customers': total_customers,
+            'total_blogs': total_blogs,
+            'recent_orders': recent_orders,
+            'recent_actions': recent_actions,
+            'total_variants': total_variants,
+        }
+
+        return render(request, 'custom_admin/dashboard.html', context)
+    else:
+        # For users who are not admin or finance_manager
+        return render(request, 'custom_admin/welcome.html', {})
+
+
+@staff_member_required
+def export_orders_excel(request):
+    # Define the headers for directly inheritable/calculable fields
+    headers = [
+        "Payment_Method", "Currency", "Total_Amount",
+        "Postpaid_Amount", "Prepaid_Amount", "Line_Item_Price_At_Order", "Order_Discount_Amount",
+        "Shipping_Case", "Order_Code", "Applicable_Tax_Rate",
+        "Igst_Amount", "Cgst_Amount", "Sgst_Amount",
+        "Gender", "Product_Name", "Order_Created_Date",
+        "Customer_Name", "Customer_PinCode", "Customer_State", "Customer_Address",
+        "Customer_Email", "Customer_Contact_No", # <--- ADDED HEADERS HERE
+        "Igst_Rate", "Cgst_Rate", "Sgst_Rate",
+        "Line_Item_Taxable_Amount",
+        "Shipping_Amount", "Coupon_Code_Used",
+        "Seller_State_Code", "SKU_Code"
+    ]
+
+    # Prepare data for the Excel report in a list of lists format
+    report_data = []
+
+    # Fetch SiteSettings once
+    site_settings = SiteSettings.objects.first()
+    shipping_charge = site_settings.shipping_charge if site_settings else Decimal('0.00')
+    TAX_RATE = Decimal('0.18')  # As seen in your invoice logic
+
+    # Seller's state is constant (Mumbai, Maharashtra, India)
+    SELLER_STATE_CODE = "MH"
+
+    # Fetch orders with related data to minimize queries
+    orders = Order.objects.select_related('user').prefetch_related(
+        Prefetch('items', queryset=OrderItem.objects.select_related(
+            'product',
+            'product_variant',
+        ))
+    ).order_by('-created_at')
+
+    for order in orders:
+        is_maharashtra = order.shipping_state.strip().lower() == "maharashtra".lower()
+        shipping_case = "Intrastate" if is_maharashtra else "Interstate"
+
+        grand_total_to_pay = order.total + shipping_charge
+        postpaid_amount = grand_total_to_pay if order.payment_method == "Cash on Delivery" else Decimal('0.00')
+        prepaid_amount = grand_total_to_pay if order.payment_method != "Cash on Delivery" else Decimal('0.00')
+        order_discount_amount = order.discount if order.discount else Decimal('0.00')
+
+        for item in order.items.all():
+            product = item.product
+            product_variant = item.product_variant
+
+            product_name_base = product.name if product else 'N/A'
+            sku_code = product.sku if product else 'N/A'
+
+            gender = 'N/A'
+            if product_variant and product_variant.gender:
+                gender = product_variant.gender
+            elif product and product.variants.first() and product.variants.first().gender:
+                gender = product.variants.first().gender
+
+            variant_color = product_variant.color if product_variant else 'N/A'
+            variant_size = item.selected_size if item.selected_size else 'N/A'
+
+            parts = [product_name_base]
+            if variant_color and variant_color != 'N/A':
+                parts.append(variant_color)
+            if variant_size and variant_size != 'N/A':
+                parts.append(variant_size)
+            detailed_product_name = "_".join(parts).replace(' ', '_').lower()
+
+            line_item_total_price = item.quantity * item.price
+            line_item_taxable_amount = line_item_total_price / (Decimal('1') + TAX_RATE)
+            item_tax_amount_total = line_item_total_price - line_item_taxable_amount
+
+            igst_amount = Decimal('0.00')
+            cgst_amount = Decimal('0.00')
+            sgst_amount = Decimal('0.00')
+
+            igst_rate = Decimal('0.00')
+            cgst_rate = Decimal('0.00')
+            sgst_rate = Decimal('0.00')
+
+            if shipping_case == "Interstate":
+                igst_amount = item_tax_amount_total
+                igst_rate = TAX_RATE
+            else:
+                cgst_amount = item_tax_amount_total / 2
+                sgst_amount = item_tax_amount_total / 2
+                cgst_rate = TAX_RATE / 2
+                sgst_rate = TAX_RATE / 2
+
+            customer_address = f"{order.shipping_address1}, {order.shipping_address2 or ''}"
+            if order.shipping_city: customer_address += f", {order.shipping_city}"
+            if order.shipping_state: customer_address += f", {order.shipping_state}"
+            if order.shipping_zipcode: customer_address += f", {order.shipping_zipcode}"
+            if order.shipping_country: customer_address += f", {order.shipping_country}"
+
+            report_data.append([
+                order.payment_method,
+                "INR",
+                float(grand_total_to_pay),
+                float(postpaid_amount),
+                float(prepaid_amount),
+                float(line_item_total_price),
+                float(order_discount_amount),
+                shipping_case,
+                order.order_id,
+                float(TAX_RATE),
+                float(igst_amount),
+                float(cgst_amount),
+                float(sgst_amount),
+                gender,
+                detailed_product_name,
+                order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                order.shipping_full_name,
+                order.shipping_zipcode,
+                order.shipping_state,
+                customer_address,
+                order.shipping_email,      # <--- ADDED CUSTOMER EMAIL
+                order.shipping_phone,      # <--- ADDED CUSTOMER PHONE
+                float(igst_rate),
+                float(cgst_rate),
+                float(sgst_rate),
+                float(line_item_taxable_amount),
+                float(shipping_charge),
+                order.discount_code if order.discount_code else "",
+                SELLER_STATE_CODE,
+                sku_code
+            ])
+
+    return generate_excel_report("Orders Report(Product)", headers=headers, report_data=report_data)
+
+
+
+@staff_member_required
+def export_orders_summary_excel(request):
+    """
+    Generates an Excel report with one row per order,
+    providing aggregated order-level sales data.
+    """
+    headers = [
+        "Payment_Method",
+        "Currency",
+        "Order_Total_Including_Shipping",
+        "Postpaid_Amount",
+        "Prepaid_Amount",
+        "Order_Subtotal_Before_Tax_Shipping_Discount",
+        "Order_Discount_Amount",
+        "Shipping_Case",
+        "Order_Code",
+        "Applicable_Tax_Rate_Per_Item",
+        "Total_IGST_Amount_Order",
+        "Total_CGST_Amount_Order",
+        "Total_SGST_Amount_Order",
+        "Order_Created_Date",
+        "Customer_Name",
+        "Customer_PinCode",
+        "Customer_State",
+        "Customer_Address",
+        "Customer_Email", "Customer_Contact_No", # <--- ADDED HEADERS HERE
+        "IGST_Rate_Per_Item",
+        "CGST_Rate_Per_Item",
+        "SGST_Rate_Per_Item",
+        "Order_Taxable_Amount",
+        "Shipping_Amount",
+        "Coupon_Code_Used",
+        "Seller_State_Code",
+        "Order_Status",
+    ]
+
+    report_data = []
+
+    site_settings = SiteSettings.objects.first()
+    shipping_charge = Decimal(str(site_settings.shipping_charge)) if site_settings else Decimal('0.00')
+    TAX_RATE = Decimal('0.18')
+
+    SELLER_STATE_CODE = "MH"
+
+    orders = Order.objects.select_related('user').prefetch_related('items').order_by('-created_at')
+
+    for order in orders:
+        is_maharashtra = order.shipping_state.strip().lower() == "maharashtra".lower()
+        shipping_case = "Intrastate" if is_maharashtra else "Interstate"
+
+        grand_total_to_pay = order.total + shipping_charge
+        postpaid_amount = grand_total_to_pay if order.payment_method == "Cash on Delivery" else Decimal('0.00')
+        prepaid_amount = grand_total_to_pay if order.payment_method != "Cash on Delivery" else Decimal('0.00')
+        order_discount_amount = order.discount if order.discount else Decimal('0.00')
+
+        order_subtotal_before_tax_shipping_discount = Decimal('0.00')
+        order_total_taxable_amount = Decimal('0.00')
+
+        for item in order.items.all():
+            line_item_total_price = item.quantity * item.price
+            item_taxable_amount = line_item_total_price / (Decimal('1') + TAX_RATE)
+
+            order_subtotal_before_tax_shipping_discount += line_item_total_price
+            order_total_taxable_amount += item_taxable_amount
+
+        order_total_tax_amount = order_subtotal_before_tax_shipping_discount - order_total_taxable_amount
+
+        igst_amount_order = Decimal('0.00')
+        cgst_amount_order = Decimal('0.00')
+        sgst_amount_order = Decimal('0.00')
+
+        igst_rate_per_item = Decimal('0.00')
+        cgst_rate_per_item = Decimal('0.00')
+        sgst_rate_per_item = Decimal('0.00')
+
+        if shipping_case == "Interstate":
+            igst_amount_order = order_total_tax_amount
+            igst_rate_per_item = TAX_RATE
+        else:
+            cgst_amount_order = order_total_tax_amount / 2
+            sgst_amount_order = order_total_tax_amount / 2
+            cgst_rate_per_item = TAX_RATE / 2
+            sgst_rate_per_item = TAX_RATE / 2
+
+        customer_address_parts = [order.shipping_address1]
+        if order.shipping_address2:
+            customer_address_parts.append(order.shipping_address2)
+        if order.shipping_city:
+            customer_address_parts.append(order.shipping_city)
+        if order.shipping_state:
+            customer_address_parts.append(order.shipping_state)
+        if order.shipping_zipcode:
+            customer_address_parts.append(order.shipping_zipcode)
+        if order.shipping_country:
+            customer_address_parts.append(order.shipping_country)
+        customer_address = ", ".join(filter(None, customer_address_parts))
+
+
+        report_data.append([
+            order.payment_method,
+            "INR",
+            float(grand_total_to_pay),
+            float(postpaid_amount),
+            float(prepaid_amount),
+            float(order_subtotal_before_tax_shipping_discount),
+            float(order_discount_amount),
+            shipping_case,
+            order.order_id,
+            float(TAX_RATE),
+            float(igst_amount_order),
+            float(cgst_amount_order),
+            float(sgst_amount_order),
+            order.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            order.shipping_full_name,
+            order.shipping_zipcode,
+            order.shipping_state,
+            customer_address,
+            order.shipping_email,      # <--- ADDED CUSTOMER EMAIL
+            order.shipping_phone,      # <--- ADDED CUSTOMER PHONE
+            float(igst_rate_per_item),
+            float(cgst_rate_per_item),
+            float(sgst_rate_per_item),
+            float(order_total_taxable_amount),
+            float(shipping_charge),
+            order.discount_code if order.discount_code else "",
+            SELLER_STATE_CODE,
+            order.status,
+        ])
+    return generate_excel_report("Order Report(Order)", headers=headers, report_data=report_data)
+
+def generate_excel_report(report_title, labels=None, data=None, headers=None, report_data=None):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = report_title
+
+    # Add the main report title at the top
+    ws.append([report_title])
+    ws.append([]) # Add a blank row for spacing
+
+    if headers and report_data is not None: # Case for multi-column detailed report
+        ws.append(headers) # Add the column headers
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4CAF50", end_color="4CAF50", fill_type="solid")
+        for cell in ws[ws.max_row]: # Apply style to the just added header row
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+
+        for row in report_data:
+            ws.append(row)
+
+    elif labels is not None and data is not None: # Case for 2-column statistical report
+        ws.append(['Date/Period', 'Value']) # Add default headers for statistical report
+        for label, value in zip(labels, data):
+            ws.append([label, value])
+
+    else:
+        # Handle cases where neither format is correctly provided
+        ws.append(["Error: No data format provided"])
+
+    # Optional: Adjust column widths for better readability (applies to all scenarios)
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if cell.value is not None:
+                    cell_length = len(str(cell.value))
+                    if cell_length > max_length:
+                        max_length = cell_length
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column].width = adjusted_width
+
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"{report_title.replace(' ', '_').lower()}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
 
 def weekly_order_data(request):
     current_year = now().year
@@ -202,42 +542,23 @@ def monthly_sales_data(request):
     return JsonResponse({'labels': labels, 'data': list(data.values())})
 
 
-def generate_excel_report(labels, data, report_title):
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = report_title
-
-    ws.append([report_title])
-    ws.append(['Date/Period', 'Value'])
-
-    for label, value in zip(labels, data):
-        ws.append([label, value])
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    filename = f"{report_title.replace(' ', '_').lower()}.xlsx"
-    response['Content-Disposition'] = f'attachment; filename={filename}'
-    wb.save(response)
-    return response
-
-
 def download_weekly_order_report(request):
     response = weekly_order_data(request)
     data_response = json.loads(response.content)
-    return generate_excel_report(data_response['labels'], data_response['data'], 'Weekly Order Report')
-
+    # Corrected: Pass the report title as the first argument,
+    # then labels and data for the statistical report
+    return generate_excel_report('Weekly Order Report', labels=data_response['labels'], data=data_response['data'])
 
 def download_daily_sales_report(request):
     response = daily_sales_data(request)
     data_response = json.loads(response.content)
-    return generate_excel_report(data_response['labels'], data_response['data'], 'Daily Sales Report')
+    return generate_excel_report('Daily Sales Report', labels=data_response['labels'], data=data_response['data'])
 
-
-def download_monthly_sales_report(request):
-    response = monthly_sales_data(request)
+def download_monthly_sales_report(request): # <--- This is the function you are calling
+    response = monthly_sales_data(request) # <--- This calls the data generation function
     data_response = json.loads(response.content)
-    return generate_excel_report(data_response['labels'], data_response['data'], 'Monthly Sales Report')
+    # Corrected based on previous discussion
+    return generate_excel_report('Monthly Sales Report', labels=data_response['labels'], data=list(data_response['data']))
 
 def get_recent_actions(request):
     # Fetch the 10 most recent log entries
@@ -260,7 +581,31 @@ def get_recent_actions(request):
 @staff_member_required
 def main_categories_view(request):
     main_categories = MainCategory.objects.all()
-    return render(request, 'custom_admin/products/main_categories.html', {'main_categories': main_categories})
+
+    # --- Search Filter ---
+    query = request.GET.get('q')
+    if query:
+        main_categories = main_categories.filter(
+            Q(title__icontains=query) | Q(price__icontains=query)
+        )
+
+    # --- Sort Filter ---
+    sort_by = request.GET.get('sort_by', 'title') # Default sort by title
+    order = request.GET.get('order', 'asc') # Default order ascending
+
+    if sort_by in ['title', 'price']: # Ensure we only sort by valid fields
+        if order == 'desc':
+            main_categories = main_categories.order_by(f'-{sort_by}')
+        else:
+            main_categories = main_categories.order_by(sort_by)
+
+    context = {
+        'main_categories': main_categories,
+        'query': query, # Pass the query back to the template for display
+        'sort_by': sort_by, # Pass current sort_by to template
+        'order': order,   # Pass current order to template
+    }
+    return render(request, 'custom_admin/products/main_categories.html', context)
 
 
 def add_main_category_view(request):
@@ -294,9 +639,46 @@ def delete_main_category_view(request, pk):
     return render(request, 'custom_admin/products/delete_main_category.html', {'category': category})
 
 
+@staff_member_required
 def subcategories_view(request):
     subcategories = SubCategory.objects.all()
-    return render(request, 'custom_admin/products/subcategories.html', {'subcategories': subcategories})
+
+    # --- Search Filter ---
+    query = request.GET.get('q')
+    if query:
+        subcategories = subcategories.filter(
+            Q(title__icontains=query) |
+            Q(main_category__title__icontains=query) | # Search by related MainCategory title
+            Q(price__icontains=query)
+        )
+
+    # --- Main Category Filter (Dropdown) ---
+    main_category_filter = request.GET.get('main_category')
+    if main_category_filter:
+        subcategories = subcategories.filter(main_category__id=main_category_filter)
+
+    # --- Sort Filter ---
+    sort_by = request.GET.get('sort_by', 'title') # Default sort by title
+    order = request.GET.get('order', 'asc') # Default order ascending
+
+    if sort_by in ['title', 'main_category__title', 'price']: # Ensure we only sort by valid fields
+        if order == 'desc':
+            subcategories = subcategories.order_by(f'-{sort_by}')
+        else:
+            subcategories = subcategories.order_by(sort_by)
+
+    # Get all main categories for the dropdown filter
+    main_categories_for_filter = MainCategory.objects.all().order_by('title')
+
+    context = {
+        'subcategories': subcategories,
+        'query': query, # Pass the query back to the template for display
+        'sort_by': sort_by, # Pass current sort_by to template
+        'order': order,   # Pass current order to template
+        'main_category_filter': main_category_filter, # Pass current main_category filter to template
+        'main_categories_for_filter': main_categories_for_filter, # Pass all main categories for dropdown
+    }
+    return render(request, 'custom_admin/products/subcategories.html', context)
 
 
 def add_subcategory_view(request):
@@ -432,62 +814,109 @@ def upload_subcategories_view(request):
 
 
 
+@staff_member_required
 def product_list_view(request):
     products = Product.objects.all()
-    return render(request, 'custom_admin/products/product_list.html', {'products': products})
 
+    # --- Search Filter ---
+    query = request.GET.get('q')
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) |
+            Q(sku__icontains=query) |
+            Q(main_category__title__icontains=query) # Search by related MainCategory title
+        )
+
+    # --- Main Category Filter (Dropdown) ---
+    main_category_filter = request.GET.get('main_category')
+    if main_category_filter:
+        products = products.filter(main_category__id=main_category_filter)
+
+    # --- Product Status Filter (Dropdown) ---
+    # Assuming 'product_status' is the field on your Product model
+    # and it uses choices (e.g., STATUS_CHOICES = [('active', 'Active'), ('inactive', 'Inactive')])
+    product_status_filter = request.GET.get('status')
+    if product_status_filter:
+        products = products.filter(product_status=product_status_filter)
+
+    # --- Sort Filter ---
+    sort_by = request.GET.get('sort_by', 'name') # Default sort by product name
+    order = request.GET.get('order', 'asc') # Default order ascending
+
+    # Validate sort_by field to prevent arbitrary lookups
+    valid_sort_fields = ['name', 'sku', 'main_category__title', 'product_status']
+    if sort_by in valid_sort_fields:
+        if order == 'desc':
+            products = products.order_by(f'-{sort_by}')
+        else:
+            products = products.order_by(sort_by)
+    else:
+        # Default sort if an invalid sort_by is provided
+        products = products.order_by('name')
+
+
+    # Get data for dropdown filters
+    main_categories_for_filter = MainCategory.objects.all().order_by('title')
+    # Assuming your Product model has a product_status field with choices
+    product_status_choices = Product._meta.get_field('product_status').choices
+
+
+    # Determine if any filters are active for the "No results" message
+    filters_active = bool(query or main_category_filter or product_status_filter)
+
+
+    context = {
+        'products': products,
+        'query': query,
+        'main_category_filter': main_category_filter,
+        'product_status_filter': product_status_filter,
+        'sort_by': sort_by,
+        'order': order,
+        'main_categories_for_filter': main_categories_for_filter,
+        'product_status_choices': product_status_choices,
+        'filters_active': filters_active, # Pass the flag to the template
+    }
+    return render(request, 'custom_admin/products/product_list.html', context)
 
 def add_product_view(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
-        formset = ExtraImagesFormSet(request.POST, request.FILES, instance=form.instance)
 
-        if form.is_valid() and formset.is_valid():
+        if form.is_valid():
             with transaction.atomic():  # Ensure atomicity
                 product = form.save()
-                formset.instance = product
-                formset.save()
             return redirect('custom_admin:product_list')
         else:
-            print(form.errors, formset.errors)  # Debug errors
+            print(form.errors)  # Debug errors
     else:
         form = ProductForm()
-        formset = ExtraImagesFormSet()
 
     return render(
         request,
         'custom_admin/products/add_product.html',
-        {'form': form, 'formset': formset}
+        {'form': form}
     )
 
 
+@staff_member_required
 def edit_product_view(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
+    # Initialize the ProductForm with the product instance
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES, instance=product)
-        formset = ExtraImagesFormSet(request.POST, request.FILES, instance=product)
 
-        if form.is_valid() and formset.is_valid():
-            with transaction.atomic():
-                product = form.save()  # Save the product
-                formset.instance = product  # Associate extra images with this product
-                formset.save()  # Save all extra images
-            return redirect('custom_admin:product_list')
-        else:
-            print("Form errors:", form.errors)
-            print("Formset errors:", formset.errors)
+        if form.is_valid():
+            form.save()
+            return redirect('custom_admin:product_list')  # Redirect to your product list page
     else:
         form = ProductForm(instance=product)
-        formset = ExtraImagesFormSet(instance=product)
 
-    return render(
-        request,
-        'custom_admin/products/edit_product.html',
-        {'form': form, 'formset': formset, 'product': product}
-    )
-
-
+    context = {
+        'form': form,
+        'product': product,  # Pass product to template if needed
+    }
+    return render(request, 'custom_admin/products/edit_product.html', context)  # Assuming this is your edit template
 def delete_product_view(request, pk):
     product = get_object_or_404(Product, pk=pk)
     if request.method == 'POST':
@@ -496,15 +925,70 @@ def delete_product_view(request, pk):
     return render(request, 'custom_admin/products/delete_product.html', {'product': product})
 
 
+@staff_member_required
 def variant_list_view(request):
+    # Start with all variants and prefetch related size options for efficiency
     variants = ProductVariant.objects.all().prefetch_related('size_options')
 
-    for variant in variants:
-        variant.total_stock = sum(option.stock_quantity for option in variant.size_options.all())
+    # --- Apply Annotations for Total Stock Always ---
+    # Annotate total_stock_display for all variants. This makes it available regardless of sorting.
+    variants = variants.annotate(
+        total_stock_display=Sum('size_options__stock_quantity')
+    )
 
-    return render(request, 'custom_admin/products/variant_list.html', {
-        'variants': variants
-    })
+    # --- Search Filter ---
+    query = request.GET.get('q')
+    if query:
+        variants = variants.filter(
+            Q(vid__icontains=query) |
+            Q(product__name__icontains=query) |
+            Q(color__icontains=query)
+        )
+
+    # --- Product Filter (Dropdown) ---
+    product_filter = request.GET.get('product')
+    if product_filter:
+        variants = variants.filter(product__id=product_filter)
+
+    # --- Gender Filter (Dropdown) ---
+    gender_filter = request.GET.get('gender')
+    if gender_filter:
+        variants = variants.filter(gender=gender_filter)
+
+    # --- Sort Filter ---
+    sort_by = request.GET.get('sort_by', 'vid') # Default sort by Variant ID
+    order = request.GET.get('order', 'asc') # Default order ascending
+
+    valid_sort_fields = ['vid', 'product__name', 'color', 'gender', 'total_stock_display'] # Use the annotated field name
+    # We now sort by 'total_stock_display' directly since it's always annotated.
+    if sort_by in valid_sort_fields:
+        if order == 'desc':
+            variants = variants.order_by(f'-{sort_by}')
+        else:
+            variants = variants.order_by(sort_by)
+    else:
+        variants = variants.order_by('vid') # Default sort if invalid field
+
+    # Get data for dropdown filters
+    products_for_filter = Product.objects.all().order_by('name')
+    gender_choices = ProductVariant._meta.get_field('gender').choices
+
+    # Determine if any filters are active for the "No results" message
+    filters_active = bool(query or product_filter or gender_filter)
+
+    context = {
+        'variants': variants,
+        'query': query,
+        'product_filter': product_filter,
+        'gender_filter': gender_filter,
+        'sort_by': sort_by,
+        'order': order,
+        'products_for_filter': products_for_filter,
+        'gender_choices': gender_choices,
+        'filters_active': filters_active,
+    }
+    return render(request, 'custom_admin/products/variant_list.html', context)
+
 
 @staff_member_required
 def upload_products_view(request):
@@ -849,36 +1333,74 @@ def generate_all_variant_labels(request):
     return response
 # Order List View
 
+
 def order_list_view(request):
+    # Start with all orders
     orders = Order.objects.all()
-    query = request.GET.get('user')
-    status = request.GET.get('status')
-    date = request.GET.get('date')
 
-    if query:
-        orders = orders.filter(user__username__icontains=query)
+    # Retrieve filter parameters from the request's GET query string
+    search_query = request.GET.get('q')           # For Order ID or User search
+    status_filter = request.GET.get('status')      # For order status
+    payment_method_filter = request.GET.get('payment_method') # For payment method
+    start_date_str = request.GET.get('start_date') # For start date of creation
+    end_date_str = request.GET.get('end_date')     # For end date of creation
 
-    if status:
-        orders = orders.filter(status=status)
+    # Apply the search query filter (Order ID or Username)
+    if search_query:
+        # Use Q objects to combine multiple OR conditions for the search
+        orders = orders.filter(
+            Q(order_id__icontains=search_query) |  # Case-insensitive search on order_id
+            Q(user__username__icontains=search_query) # Case-insensitive search on associated username
+        )
 
-    if date:
+    # Apply the status filter
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+
+
+    # Apply the date range filters
+    if start_date_str:
         try:
-            date_obj = datetime.datetime.strptime(date, '%Y-%m-%d').date()
-            orders = orders.filter(created_at__date=date_obj)
+            # Parse the start date string into a date object (YYYY-MM-DD format from HTML date input)
+            start_date_obj = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            # Filter orders created on or after the start date
+            orders = orders.filter(created_at__date__gte=start_date_obj)
         except ValueError:
-            pass  # Invalid date, ignore the filter
+            # If the date format is invalid, ignore the filter for this parameter
+            print(f"Warning: Invalid start_date format provided: {start_date_str}")
+            pass
 
-    # Calculate final_total for display
+    if end_date_str:
+        try:
+            # Parse the end date string into a date object (YYYY-MM-DD format from HTML date input)
+            end_date_obj = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            # Filter orders created on or before the end date
+            orders = orders.filter(created_at__date__lte=end_date_obj)
+        except ValueError:
+            # If the date format is invalid, ignore the filter for this parameter
+            print(f"Warning: Invalid end_date format provided: {end_date_str}")
+            pass
+
+    # Calculate final_total for each order before passing to the template.
+    # It's good practice to ensure discount is treated as 0 if None.
     for order in orders:
-        order.final_total = order.total - order.discount if order.discount else order.total
+        order.final_total = order.total - (order.discount if order.discount is not None else 0)
 
+    # Assuming Order.STATUS_CHOICES is defined in your Order model
     statuses = Order.STATUS_CHOICES
 
     return render(request, 'custom_admin/order/order_list.html', {
         'orders': orders,
         'statuses': statuses,
+        # Pass back the filter values so they can persist in the form fields
+        'selected_status': status_filter,
+        'selected_start_date': start_date_str,
+        'selected_end_date': end_date_str,
+        'search_query': search_query,
     })
-# Add Order View
+
+
+
 def add_order_view(request):
     if request.method == 'POST':
         form = OrderForm(request.POST)
@@ -910,6 +1432,22 @@ def delete_order_view(request, pk):
         order.delete()
         return redirect('custom_admin:order_list')
     return render(request, 'custom_admin/order/delete_order.html', {'order': order})
+
+
+def update_order_status_view(request, pk):
+    # Ensure this is a POST request and the user is a staff member for security
+    if request.method == 'POST' and request.user.is_staff:
+        order = get_object_or_404(Order, pk=pk)
+        new_status = request.POST.get('status')
+
+        # Check if the new status is a valid choice
+        valid_statuses = [choice[0] for choice in Order.STATUS_CHOICES]
+        if new_status in valid_statuses:
+            order.status = new_status
+            order.save()
+
+    # Redirect back to the order list page
+    return redirect('custom_admin:order_list')
 
 
 def cart_list_view(request):
@@ -1002,20 +1540,64 @@ def user_addresses_view(request, user_id):
     return render(request, 'custom_admin/order/user_addresses.html', context)
 
 
-# Blog List View
+@staff_member_required # Add this decorator for admin views
 def blog_list_view(request):
     blogs = Blog.objects.all()
-    return render(request, 'custom_admin/order/blog_list.html', {'blogs': blogs})
 
+    # --- Search Filter ---
+    query = request.GET.get('q')
+    if query:
+        blogs = blogs.filter(
+            Q(title__icontains=query) |
+            Q(author__icontains=query) # Assuming 'author' is a CharField or similar for text search
+        )
+
+    # --- Sort Filter ---
+    sort_by = request.GET.get('sort_by', 'created_at') # Default sort by created_at
+    order = request.GET.get('order', 'desc') # Default order descending (newest first)
+
+    valid_sort_fields = ['title', 'author', 'created_at']
+    if sort_by in valid_sort_fields:
+        if order == 'desc':
+            blogs = blogs.order_by(f'-{sort_by}')
+        else:
+            blogs = blogs.order_by(sort_by)
+    else:
+        blogs = blogs.order_by('-created_at') # Default sort if invalid field
+
+    # Determine if any filters are active for the "No results" message
+    filters_active = bool(query) # Only query for now, no other specific filters
+
+    context = {
+        'blogs': blogs,
+        'query': query,
+        'sort_by': sort_by,
+        'order': order,
+        'filters_active': filters_active,
+    }
+    return render(request, 'custom_admin/order/blog_list.html', context)
 def add_blog_view(request):
     if request.method == 'POST':
         form = BlogForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            return redirect('custom_admin:blog_list')
+            print("Form is valid, attempting to save...") # Add this
+            try:
+                form.save()
+                print("Blog saved successfully!") # Add this
+                return redirect('custom_admin:blog_list')
+            except Exception as e:
+                print(f"Error saving blog: {e}") # Add this
+                # Log the full traceback for production
+                import traceback
+                traceback.print_exc()
+                # You might want to render the form again with an error message
+                # return render(request, 'custom_admin/order/add_blog.html', {'form': form, 'error_message': 'An error occurred during save.'})
+        else:
+            print("Form is NOT valid. Errors:", form.errors) # Add this
     else:
         form = BlogForm()
     return render(request, 'custom_admin/order/add_blog.html', {'form': form})
+
 
 def edit_blog_view(request, pk):
     blog = get_object_or_404(Blog, pk=pk)
@@ -1038,8 +1620,50 @@ def delete_blog_view(request, pk):
 @staff_member_required
 def banner_list_view(request):
     banners = BannerImage.objects.all()
-    return render(request, 'custom_admin/order/banner_list.html', {'banners': banners})
 
+    # --- Search Filter ---
+    query = request.GET.get('q')
+    if query:
+        banners = banners.filter(Q(title__icontains=query))
+
+    # --- Status Filter (Dropdown) ---
+    status_filter = request.GET.get('status')
+    if status_filter:
+        if status_filter == 'active':
+            banners = banners.filter(is_active=True)
+        elif status_filter == 'inactive':
+            banners = banners.filter(is_active=False)
+
+    # --- Sort Filter ---
+    sort_by = request.GET.get('sort_by', 'created_at') # Default sort by created_at
+    order = request.GET.get('order', 'desc') # Default order descending (newest first)
+
+    valid_sort_fields = ['title', 'is_active', 'created_at']
+    if sort_by in valid_sort_fields:
+        if order == 'desc':
+            banners = banners.order_by(f'-{sort_by}')
+        else:
+            banners = banners.order_by(sort_by)
+    else:
+        banners = banners.order_by('-created_at') # Default sort if invalid field
+
+    # Determine if any filters are active for the "No results" message
+    filters_active = bool(query or status_filter)
+
+    context = {
+        'banners': banners,
+        'query': query,
+        'status_filter': status_filter,
+        'sort_by': sort_by,
+        'order': order,
+        'filters_active': filters_active,
+        # Pass status choices directly to the template for the dropdown
+        'status_choices': [
+            ('active', 'Active'),
+            ('inactive', 'Inactive')
+        ]
+    }
+    return render(request, 'custom_admin/order/banner_list.html', context)
 @staff_member_required
 def add_banner_view(request):
     if request.method == 'POST':
@@ -1319,3 +1943,75 @@ def delete_media_file(request, pk):
     media.delete()
     messages.success(request, "Media file deleted successfully.")
     return redirect('custom_admin:media_library')
+
+
+@login_required
+def site_content_list(request):
+    """
+    Displays the current SiteContent instance.
+    Provides a link to create it if it doesn't exist, or edit if it does.
+    """
+    site_content = SiteContent.objects.first() # There should only be one instance
+
+    context = {
+        'site_content': site_content,
+        'page_title': 'Site Content Management',
+    }
+    return render(request, 'custom_admin/site_content_list.html', context)
+
+@login_required
+def site_content_create_or_update(request):
+    """
+    Handles creation if no SiteContent exists, or updates the existing one.
+    This consolidates add/update into a single view for the single instance.
+    """
+    site_content_instance = SiteContent.objects.first()
+    is_new_instance = not site_content_instance
+
+    if request.method == 'POST':
+        form = SiteContentForm(request.POST, instance=site_content_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Site Content updated successfully!' if not is_new_instance else 'Site Content created successfully!')
+            return redirect('custom_admin:site_content_list') # Redirect to the list view
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = SiteContentForm(instance=site_content_instance)
+
+    context = {
+        'form': form,
+        'is_new_instance': is_new_instance,
+        'page_title': 'Edit Site Content' if not is_new_instance else 'Create Site Content',
+    }
+    return render(request, 'custom_admin/site_content_form.html', context)
+
+
+@login_required
+def site_content_delete(request):
+    """
+    Handles the deletion of the SiteContent instance.
+    Requires strong confirmation as there should ideally be only one.
+    """
+    site_content_instance = SiteContent.objects.first()
+
+    if not site_content_instance:
+        messages.warning(request, "No Site Content to delete.")
+        return redirect('custom_admin:site_content_list')
+
+    if request.method == 'POST':
+        # Add a hidden input or check for a specific POST parameter for confirmation
+        if 'confirm_delete' in request.POST:
+            site_content_instance.delete()
+            messages.success(request, 'Site Content deleted successfully.')
+            return redirect('custom_admin:site_content_list')
+        else:
+            messages.error(request, 'Deletion not confirmed.')
+            return redirect('custom_admin:site_content_list') # Or render the confirmation again
+
+    context = {
+        'site_content': site_content_instance,
+        'page_title': 'Confirm Delete Site Content',
+    }
+    return render(request, 'custom_admin/site_content_confirm_delete.html', context)
+

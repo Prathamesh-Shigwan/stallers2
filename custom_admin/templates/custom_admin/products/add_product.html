@@ -2,6 +2,37 @@
 
 {% block content %}
 <style>
+    /* Your existing CSS (cleaned up to remove extra-image specific rules) */
+    .extra-image-item {
+        /* This class is no longer used, but kept for reference if you had other uses */
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        background-color: #fff;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .extra-image-item img {
+        /* This rule is no longer directly used for the removed section */
+        max-width: 150px;
+        height: auto;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+
+    .extra-image-controls {
+        /* This rule is no longer directly used for the removed section */
+        flex-grow: 1;
+    }
+
+    .form-check {
+        margin-top: 10px;
+    }
+
     .custom-file-upload {
         display: inline-block;
         padding: 8px 16px;
@@ -23,7 +54,7 @@
     .styled-input select {
         width: 100%;
         padding: 8px 12px;
-        border: 1px solid #ccc;
+        border: 1px solid black; /* Solid black border */
         border-radius: 6px;
         font-size: 14px;
     }
@@ -36,120 +67,212 @@
         background-size: 12px;
     }
 
+    /* Updated to add border around each styled-input div */
     .styled-input {
         margin-bottom: 20px;
+        padding: 10px; /* Add some padding inside the border */
+        border: 1px solid #ccc; /* Light grey border for fields */
+        border-radius: 4px; /* Slightly less rounded for a more structured look */
     }
 
-    .custom-checkbox {
+
+    /* Custom styles to match the image layout */
+    .form-section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #343a40;
+        padding-bottom: 10px; /* Space below title */
+        border-bottom: 1px solid #eee; /* Light line under title */
+    }
+
+    .product-status-buttons .btn {
+        margin-right: 10px;
+        border-radius: 5px;
+        font-weight: 500;
+        padding: 8px 15px;
+    }
+
+    .product-status-buttons .btn.active-status {
+        background-color: #28a745; /* Green for Active */
+        color: white;
+        border-color: #28a745;
+    }
+
+    .product-status-buttons .btn.in-stock-status {
+        background-color: #007bff; /* Blue for In Stock */
+        color: white;
+        border-color: #007bff;
+    }
+
+    .product-status-buttons .btn.feature-status {
+        background-color: #ffc107; /* Yellow for Feature */
+        color: #333;
+        border-color: #ffc107;
+    }
+
+    .product-status-buttons .btn input[type="checkbox"] {
+        display: none; /* Hide the actual checkbox */
+    }
+
+    .product-status-buttons .btn.active-status:has(input[type="checkbox"]:checked),
+    .product-status-buttons .btn.in-stock-status:has(input[type="checkbox"]:checked),
+    .product-status-buttons .btn.feature-status:has(input[type="checkbox"]:checked) {
+        border: 2px solid #333; /* Highlight active button */
+    }
+
+    .image-upload-row {
+        /* This class is no longer used, but kept for reference if you had other uses */
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 12px 16px;
-        border: 1px solid #ccc;
-        border-radius: 10px;
-        background-color: #fff;
         margin-bottom: 15px;
+        padding: 5px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background-color: #fcfcfc;
     }
 
-    .custom-checkbox input[type="checkbox"] {
-        appearance: none;
-        -webkit-appearance: none;
-        width: 20px;
-        height: 20px;
-        border: 2px solid #e91e63;
-        border-radius: 6px;
-        background-color: #e91e63;
-        position: relative;
-        cursor: pointer;
+    .image-upload-row .form-group {
+        flex-grow: 1;
+        margin-bottom: 0;
     }
 
-    .custom-checkbox input[type="checkbox"]:checked::before {
-        content: "";
-        position: absolute;
-        top: 3px;
-        left: 6px;
-        width: 5px;
-        height: 10px;
-        border: solid #fff;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
+    .image-upload-row .btn {
+        margin-left: 10px;
     }
 
-    .custom-checkbox label {
-        margin: 0;
-        font-weight: 500;
-        color: #555;
+    /* Added border to the main container to act as the "form border" */
+    .form-container-with-border {
+        border: 1px solid #000; /* Solid black border for the entire form area */
+        padding: 20px; /* Add padding inside this border */
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Styles for the column sections to give them table-like borders */
+    .column-section {
+        border: 1px solid #ddd; /* Light grey border for the column sections */
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+        background-color: #fff; /* White background for sections */
+        height: 100%; /* Make columns fill height */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Ensure columns have borders */
+    .row > div[class*="col-"] {
+        padding: 0 10px; /* Adjust padding to make space for inner column borders */
+    }
+
+    .row {
+        margin: 0 -10px; /* Compensate for column padding */
     }
 </style>
 
-<div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-    <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Add Product</h2>
-    <form method="POST" enctype="multipart/form-data" style="max-width: 800px; margin: 0 auto;">
+<div class="container mt-4">
+    <h2 class="mb-4" style="color: #343a40; text-align: center; font-weight: 600;">Product/Add Product</h2>
+    <form method="POST" enctype="multipart/form-data" class="form-container-with-border">
         {% csrf_token %}
 
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Product ID</label>{{ form.pid }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Name</label>{{ form.name }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Title</label>{{ form.title }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Description</label>{{ form.description }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Specification</label>{{ form.specification }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">User</label>{{ form.user }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Main Category</label>{{ form.main_category }}</div>
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">Subcategory</label>{{ form.sub_category }}</div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="column-section">
+                    <div class="form-section-title">Add Product</div>
 
-        <div class="border p-3 rounded mb-3 styled-input">
-            <label class="form-label">Product Status</label>
-            {{ form.product_status }}
-        </div>
-
-        <div class="custom-checkbox">
-            {{ form.status }}
-            <label for="{{ form.status.id_for_label }}">Active</label>
-        </div>
-        <div class="custom-checkbox">
-            {{ form.in_stock }}
-            <label for="{{ form.in_stock.id_for_label }}">In Stock</label>
-        </div>
-        <div class="custom-checkbox">
-            {{ form.featured }}
-            <label for="{{ form.featured.id_for_label }}">Featured</label>
-        </div>
-
-        <div class="border p-3 rounded mb-3 styled-input"><label class="form-label">SKU</label>{{ form.sku }}</div>
-
-        <h4 class="mt-4">Extra Images</h4>
-        <div id="extra-images" class="border p-3 rounded mb-3">
-            {{ formset.management_form }}
-            {% for form in formset %}
-                {{ form.id }}
-                <div class="mb-3 styled-input">
-                    <label class="form-label">Extra Image</label><br>
-                    <label for="{{ form.image.id_for_label }}" class="custom-file-upload">Choose Extra Image</label>
-                    {{ form.image }}
-                    <br><small class="extra-image-label">Not selected</small>
+                    <div class="styled-input">
+                        <label class="form-label">Product ID</label>
+                        {{ form.pid }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label">Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label">Product Title</label>
+                        {{ form.title }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label">Specification</label>
+                        {{ form.specification }}
+                    </div>
                 </div>
-                {% if form.DELETE %}
-                <div class="form-check">
-                    {{ form.DELETE }}
-                    <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Delete</label>
+            </div>
+
+            <div class="col-md-6">
+                <div class="column-section">
+                    <div class="form-section-title">Product Details</div>
+                    {# Extra Image section removed from here #}
+
+                    <div class="styled-input">
+                        <label class="form-label">User</label>
+                        {{ form.user }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label">Main Category</label>
+                        {{ form.main_category }}
+                    </div>
+                    <div class="styled-input">
+                        <label class="form-label">Sub Category</label>
+                        {{ form.sub_category }}
+                    </div>
+
+                    <div class="styled-input">
+                        <label class="form-label">Product Status</label>
+                        {{ form.product_status }}
+                    </div>
+
+                    <div class="product-status-buttons mb-3">
+                        <label class="btn active-status">
+                            {{ form.status }} Active
+                        </label>
+                        <label class="btn in-stock-status">
+                            {{ form.in_stock }} In Stock
+                        </label>
+                        <label class="btn feature-status">
+                            {{ form.featured }} Feature
+                        </label>
+                    </div>
+
+                    <div class="styled-input">
+                        <label class="form-label">SKU ID</label>
+                        {{ form.sku }}
+                    </div>
                 </div>
-                {% endif %}
-            {% endfor %}
+            </div>
         </div>
 
-        <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-success">Add Product</button>
-            <a href="{% url 'custom_admin:product_list' %}" class="btn btn-secondary">Cancel</a>
+        <div class="d-flex justify-content-center mt-4">
+            <button type="submit" class="btn btn-success me-3" style="min-width: 120px;">Submit</button>
+            <a href="{% url 'custom_admin:product_list' %}" class="btn btn-danger" style="min-width: 120px;">Cancel</a>
         </div>
     </form>
 </div>
 
 <script>
-    document.querySelectorAll('input[type="file"]').forEach(input => {
-        const label = input.closest('div').querySelector('.extra-image-label');
-        if (label && input.id.includes('image')) {
-            input.addEventListener('change', () => {
-                label.textContent = input.files.length ? input.files[0].name : 'Not selected';
-            });
+    // Removed the JavaScript related to 'input[type="file"]' as extra images are gone.
+
+    // Handle button-like styling for checkboxes
+    document.querySelectorAll('.product-status-buttons input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const label = checkbox.closest('label');
+            if (checkbox.checked) {
+                label.classList.add('active'); // Add a class when checked
+            } else {
+                label.classList.remove('active'); // Remove when unchecked
+            }
+        });
+        // Set initial state based on Django form's initial value
+        if (checkbox.checked) {
+            checkbox.closest('label').classList.add('active');
         }
     });
 </script>

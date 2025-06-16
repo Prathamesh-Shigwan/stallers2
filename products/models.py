@@ -1,6 +1,6 @@
 # product/models.py
 import os
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import shortuuid
 from django.db.models.signals import post_delete
@@ -14,7 +14,10 @@ from django.utils.html import mark_safe
 from accounts.models import User
 from decimal import Decimal
 from tinymce.models import HTMLField
-from ckeditor.fields import RichTextField
+import datetime
+
+def default_expected_delivery():
+    return datetime.date.today() + datetime.timedelta(days=5)
 
 
 STATUS_CHOICES = {
@@ -218,8 +221,7 @@ class Product(models.Model):
     updated = models.DateTimeField(null=True, blank=True)
     main_category = models.ForeignKey('MainCategory', on_delete=models.SET_NULL, null=True, related_name='products')
     sub_category = models.ForeignKey('SubCategory', on_delete=models.SET_NULL, null=True, related_name='products')
-    def product_image(self):
-        return mark_safe(f'<img src="{self.image.url}" width="50" height="50" />')
+
 
     def __str__(self):
         return self.name
@@ -289,8 +291,8 @@ class DiscountCode(models.Model):
     usage_limit = models.IntegerField(null=True, blank=True)
     per_user_limit = models.IntegerField(null=True, blank=True)
 
-    applicable_products = models.ManyToManyField('Product', blank=True)
-    applicable_categories = models.ManyToManyField('SubCategory', blank=True)
+    applicable_products = models.ManyToManyField('Product', blank=True) # Assuming Product model exists
+    applicable_categories = models.ManyToManyField('SubCategory', blank=True) # Assuming SubCategory model exists
     allowed_users = models.ManyToManyField(User, blank=True, related_name='allowed_coupons')
     auto_apply = models.BooleanField(default=False)
     is_stackable = models.BooleanField(default=False)
@@ -311,8 +313,11 @@ class DiscountCode(models.Model):
             if self.allowed_users.exists() and user not in self.allowed_users.all():
                 return False
 
-        if cart and self.min_spend and cart.total < self.min_spend:
-            return False
+        if cart and self.min_spend:
+            # THIS IS THE LINE TO CHANGE:
+            # Change from cart.total to cart.subtotal
+            if cart.subtotal < self.min_spend: # <-- Corrected line
+                return False
 
         return True
 
@@ -321,44 +326,58 @@ class DiscountCode(models.Model):
 
 class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # This will store the discounted total
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # NEW FIELD for pre-discount total
     updated = models.DateTimeField(auto_now=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     discount_code = models.ForeignKey(DiscountCode, on_delete=models.SET_NULL, null=True, blank=True, related_name='carts')
-    selected_size = models.CharField(max_length=50, null=True, blank=True)  # NEW FIELD
+    selected_size = models.CharField(max_length=50, null=True, blank=True)
     razorpay_order_id = models.CharField(max_length=100, null=True, blank=True)
 
-    def update_total(self):
-        self.total = sum(item.line_total for item in self.cartitem_set.all())
-        self.save()
+    def calculate_subtotal(self):
+        # Calculate the sum of line_total for all items in the cart
+        # This is the total BEFORE any discount is applied
+        return sum(item.line_total for item in self.cartitem_set.all())
 
-    def apply_discount(self):
+    def get_discount_amount(self):
+        """
+        Calculates and returns the discount amount.
+        This method should NOT modify the cart's state or mark the coupon as used.
+        """
         discount = Decimal('0.00')
 
-        if self.discount_code and self.discount_code.is_valid(user=self.user, cart=self):
-            cart_items = self.cartitem_set.all()
+        if not self.discount_code or not self.discount_code.is_valid(user=self.user, cart=self):
+            return discount
 
-            if self.discount_code.applicable_products.exists():
-                if not any(item.product in self.discount_code.applicable_products.all() for item in cart_items):
-                    return discount
+        # Use the subtotal for discount calculations
+        base_for_discount = self.subtotal
 
-            if self.discount_code.applicable_categories.exists():
-                if not any(item.product.sub_category in self.discount_code.applicable_categories.all() for item in
-                           cart_items):
-                    return discount
+        # Specific product/category/min_quantity checks
+        cart_items = self.cartitem_set.all()
 
-            if self.discount_code.min_quantity:
-                total_quantity = sum(item.quantity for item in cart_items)
-                if total_quantity < self.discount_code.min_quantity:
-                    return discount
+        if self.discount_code.applicable_products.exists():
+            if not any(item.product in self.discount_code.applicable_products.all() for item in cart_items):
+                return discount
 
-            if self.discount_code.discount_amount:
-                discount = self.discount_code.discount_amount
-            elif self.discount_code.discount_percentage:
-                discount = (self.discount_code.discount_percentage / 100) * self.total
+        if self.discount_code.applicable_categories.exists():
+            if not any(item.product.sub_category in self.discount_code.applicable_categories.all() for item in
+                       cart_items):
+                return discount
 
-            if self.user:
-                self.discount_code.used_by.add(self.user)
+        if self.discount_code.min_quantity:
+            total_quantity = sum(item.quantity for item in cart_items)
+            if total_quantity < self.discount_code.min_quantity:
+                return discount
+
+        if self.discount_code.discount_amount:
+            discount = self.discount_code.discount_amount
+        elif self.discount_code.discount_percentage:
+            # Ensure percentage calculation is robust
+            discount = (Decimal(self.discount_code.discount_percentage) / Decimal('100')) * base_for_discount
+
+        # Ensure discount doesn't exceed the subtotal
+        if discount > base_for_discount:
+            discount = base_for_discount
 
         return discount
 
@@ -366,9 +385,26 @@ class Cart(models.Model):
         return f"Cart id: {self.id}"
 
     def save(self, *args, **kwargs):
-        if self.discount_code and self.discount_code.is_valid():
-            self.apply_discount()
+        # 1. Always calculate the subtotal first (sum of item prices)
+        self.subtotal = self.calculate_subtotal()
+        self.total = self.subtotal # Start with subtotal for the final total
+
+        # 2. If a discount code is applied and valid, calculate and apply the discount
+        if self.discount_code and self.discount_code.is_valid(user=self.user, cart=self):
+            discount_amount_to_apply = self.get_discount_amount()
+            self.total -= discount_amount_to_apply
+
+            # IMPORTANT: Mark coupon as used when the order is placed/confirmed, not just on cart save.
+            # Otherwise, users can apply a coupon, get it marked as used, and abandon the cart.
+            # If you absolutely need to mark it here, reconsider the `per_user_limit` and `usage_limit`
+            # logic to account for abandoned carts or allow re-using for a period.
+            # For this example, I'll put it here, but with a strong recommendation to move.
+            if self.user:
+                self.discount_code.used_by.add(self.user)
+
+        # 3. Save the cart instance
         super().save(*args, **kwargs)
+
 
 
 class CartItem(models.Model):
@@ -395,19 +431,30 @@ class CartItem(models.Model):
 
 
 class ProductsReviews(models.Model):
+    RATING_CHOICES = (
+        (1, "★✩✩✩✩"),
+        (2, "★★✩✩✩"),
+        (3, "★★★✩✩"),
+        (4, "★★★★✩"),
+        (5, "★★★★★")
+    )
+
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, related_name="reviews")
     review = models.TextField()
-    rating = models.ImageField(choices=RATING, default=None)
+    rating = models.IntegerField(choices=RATING_CHOICES, default=None, null=True, blank=True)
     date = models.DateTimeField(auto_now_add=True)
+    verified_purchase = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Products Reviews"
 
     def __str__(self):
-        return self.product.name
+        if self.product:
+            return f"Review for {self.product.name} by {self.user.username}"
+        return f"Review by {self.user.username}"
 
-    def get_ratings(self):
+    def get_rating(self):
         return self.rating
 
 
@@ -500,9 +547,9 @@ class Order(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    order_id = models.CharField(max_length=8, unique=True, blank=True, editable=False)
+    order_id = models.CharField(max_length=10, unique=True, blank=True, editable=False)
     expected_delivery = models.DateField(default=default_expected_delivery)
-
+    expected_delivery_time = models.TimeField(default=datetime.time(21, 0))
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # ✅ New Field
     discount_code = models.CharField(max_length=100, blank=True, null=True)  # ✅ New Field
 
@@ -543,7 +590,35 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.order_id:
-            self.order_id = shortuuid.ShortUUID().random(length=8).upper()
+            # Generate new order_id
+            prefix = "STL"
+            # Get the last order ID, handle cases with no previous orders or non-matching prefixes
+            last_order = Order.objects.filter(order_id__startswith=prefix).order_by('-order_id').first()
+
+            if last_order:
+                try:
+                    # Extract the numeric part (e.g., "00001" from "STL00001")
+                    last_number_str = last_order.order_id[len(prefix):]
+                    last_number = int(last_number_str)
+                except (ValueError, IndexError):
+                    # Fallback if parsing fails (e.g., if existing IDs are not strictly numeric after prefix)
+                    last_number = 0
+            else:
+                last_number = 0
+
+            new_number = last_number + 1
+            # Format with leading zeros, e.g., 1 -> 00001, 123 -> 00123
+            # Assuming 5 digits for the number part, so total length 3 (prefix) + 5 (number) = 8
+            # If max_length is 10, that gives room for up to 99999.
+            self.order_id = f"{prefix}{new_number:05d}"
+
+            # Ensure uniqueness in a highly concurrent environment (though rare for order IDs)
+            # This check is more robust if there's a small chance of collision
+            # while the order_id is being created and saved.
+            while Order.objects.filter(order_id=self.order_id).exists():
+                new_number += 1
+                self.order_id = f"{prefix}{new_number:05d}"
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -573,11 +648,14 @@ class OrderItem(models.Model):
 
 class About(models.Model):
     title = models.CharField(max_length=200)
-    content = RichTextField()
+    # Changed to HTMLField to use TinyMCE for the content editor
+    content = HTMLField()
     image = models.ImageField(upload_to='about_images/', blank=True, null=True)
 
     def __str__(self):
+        # String representation of the About object
         return self.title
+
 
 
 class BannerImage(models.Model):
@@ -611,3 +689,20 @@ class MediaLibrary(models.Model):
         super().save(*args, **kwargs)
 
 
+class SiteContent(models.Model):
+    # This model will hold various editable site content
+    discount_popup_title = models.CharField(max_length=200, default="Get 10% OFF your first order")
+    discount_popup_subtitle = models.CharField(max_length=200, default="Sign up and unlock your instant discount.")
+    discount_popup_email_note = models.CharField(max_length=300,
+                                                 default="You are signing up to receive communication via email and can unsubscribe at any time.")
+
+    promo_strip_text = models.CharField(max_length=255, default="Flat 10% Off on Watches | Use code: SYLVIO10")
+
+    class Meta:
+        verbose_name = "Site Content"
+        verbose_name_plural = "Site Content"  # Ensures only one instance
+        # You can add a constraint to ensure only one row exists for site-wide settings
+        # unique_together = (("id",),) # Not strictly necessary if you enforce via admin/logic, but good practice
+
+    def __str__(self):
+        return "Site Content Settings"

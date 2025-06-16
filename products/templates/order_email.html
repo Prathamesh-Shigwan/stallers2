@@ -1,42 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+{% load static %}
 <head>
-    <title>Order Details</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - Stellars</title>
+    <style type="text/css">
+        /* Basic styles for email clients, inline CSS is preferred */
+        body { margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333333; }
+        table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+        a { text-decoration: none; color: #007bff; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .header-section { background-color: #f8f8f8; padding: 20px; text-align: center; border-bottom: 1px solid #eeeeee; }
+        .content-section { padding: 30px; }
+        .order-summary-box { background-color: #f9f9f9; border-radius: 6px; padding: 20px; margin-bottom: 25px; border: 1px solid #eeeeee; }
+        .order-items-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; border-radius: 6px; overflow: hidden; }
+        .order-items-table th, .order-items-table td { padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px; }
+        .order-items-table th { background-color: #e9ecef; font-weight: bold; color: #555555; }
+        .order-items-table tr:last-child td { border-bottom: none; }
+        .totals-table { width: 100%; margin-bottom: 25px; }
+        .totals-table td { padding: 8px 0; font-size: 14px; }
+        .totals-table .total-line { font-size: 16px; font-weight: bold; border-top: 1px dashed #cccccc; padding-top: 15px; margin-top: 15px; }
+        .address-section { margin-bottom: 25px; display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .address-box { width: 48%; min-width: 250px; background-color: #f9f9f9; border: 1px solid #eeeeee; border-radius: 6px; padding: 15px; box-sizing: border-box; margin-bottom: 15px; }
+        .address-box h3 { font-size: 15px; margin-top: 0; color: #555555; }
+        .button { display: inline-block; padding: 12px 25px; background-color: #3fd9b2; color: #ffffff; text-align: center; border-radius: 5px; font-size: 16px; font-weight: bold; }
+        .footer-section { background-color: #f8f8f8; padding: 20px; text-align: center; font-size: 12px; color: #777777; border-top: 1px solid #eeeeee; }
+
+        @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; border-radius: 0 !important; box-shadow: none !important; }
+            .content-section { padding: 20px !important; }
+            .address-box { width: 100% !important; margin-bottom: 10px !important; }
+            .address-section { display: block !important; }
+        }
+    </style>
 </head>
-<body>
+<body style="margin: 0; padding: 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333333;">
 
-    <p>Hello <strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
-
-    <p>Thank you for shopping with Stellars! We are delighted to confirm your order and are currently processing it. Below are the details of your purchase:</p>
-    <br>
-    <h1>Order Summary</h1>
-    <h2>Order Confirm - Order #{{ order.id }}</h2>
-    <p><strong>Your Order ID:</strong> {{ order.id }}</p>
-    <p><strong>Order Date:</strong> {{ order.created_at }}</p>
-
-    <h2>Order Items</h2>
-    <table border="1" cellspacing="0" cellpadding="5">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;">
         <tr>
-            <th>Product</th>
-            <th>Quantity</th>
-            <th>Price</th>
+            <td align="center" style="padding: 20px 0;">
+                <table class="container" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+                    <tr>
+                        <td class="content-section" style="padding: 30px;">
+                            <h2 style="font-size: 24px; color: #333333; margin-top: 0; margin-bottom: 20px;">Hello {{ user.username }},</h2>
+                            <p style="font-size: 15px; line-height: 1.6; margin-bottom: 25px;">Thank you for shopping with Stellars! We are delighted to confirm your order and are currently processing it. Below are the details of your purchase:</p>
+
+                            <div class="order-summary-box" style="background-color: #f9f9f9; border-radius: 6px; padding: 20px; margin-bottom: 25px; border: 1px solid #eeeeee;">
+                                <h3 style="font-size: 18px; color: #555555; margin-top: 0; margin-bottom: 15px;">Order Summary</h3>
+                                <p style="font-size: 15px; margin: 5px 0;"><strong>Order Confirm - Order #{{ order.order_id }}</strong></p>
+                                <p style="font-size: 14px; margin: 5px 0;">Your Order ID: <strong style="color: #007bff;">{{ order.order_id }}</strong></p>
+                                <p style="font-size: 14px; margin: 5px 0;">Order Date: {{ order.created_at|date:"F j, Y, h:i a" }}</p>
+                            </div>
+
+                            <h3 style="font-size: 18px; color: #555555; margin-bottom: 15px;">Order Items</h3>
+                            <table class="order-items-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: separate; border-spacing: 0; margin-bottom: 25px; border-radius: 6px; overflow: hidden;">
+                                <thead>
+                                    <tr>
+                                        <th style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px; background-color: #e9ecef; font-weight: bold; color: #555555;">Product</th>
+                                        <th style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px; background-color: #e9ecef; font-weight: bold; color: #555555;">Quantity</th>
+                                        <th style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px; background-color: #e9ecef; font-weight: bold; color: #555555;">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr>
+                                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px;">
+                                            {{ item.product.name }}
+                                            {% if item.product_variant %} - {{ item.product_variant.color }}{% endif %}
+                                            {% if item.selected_size %} (Size: {{ item.selected_size }}){% endif %}
+                                        </td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px;">{{ item.quantity }}</td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #eeeeee; text-align: left; font-size: 14px;">₹ {{ item.price|floatformat:2 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+
+                            <h3 style="font-size: 18px; color: #555555; margin-bottom: 15px;">Order Totals</h3>
+                            <table class="totals-table" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 25px;">
+                                <tr>
+                                    <td style="padding: 8px 0; font-size: 14px;">Product Total (after discount, including tax):</td>
+                                    <td align="right" style="padding: 8px 0; font-size: 14px;">₹ {{ order.total|floatformat:2 }}</td>
+                                </tr>
+                                {% comment %} The `order.discount` field already contains the actual discount amount {% endcomment %}
+                                {% if order.discount and order.discount > 0 %}
+                                <tr>
+                                    <td style="padding: 8px 0; font-size: 14px;">Discount (Code: {{ order.discount_code|default:"N/A" }}):</td>
+                                    <td align="right" style="padding: 8px 0; font-size: 14px;">- ₹ {{ order.discount|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td style="padding: 8px 0; font-size: 14px;">Shipping Charge:</td>
+                                    <td align="right" style="padding: 8px 0; font-size: 14px;">₹ {{ shipping_charge|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="total-line" style="font-size: 16px; font-weight: bold; border-top: 1px dashed #cccccc; padding-top: 15px; margin-top: 15px;">Order Total:</td>
+                                    <td class="total-line" align="right" style="font-size: 16px; font-weight: bold; border-top: 1px dashed #cccccc; padding-top: 15px; margin-top: 15px;">₹ {{ final_total|floatformat:2 }}</td>
+                                </tr>
+                            </table>
+
+                            <h3 style="font-size: 18px; color: #555555; margin-bottom: 15px;">Delivery Information</h3>
+                            <div class="address-section" style="margin-bottom: 25px; display: flex; justify-content: space-between; flex-wrap: wrap;">
+                                <div class="address-box" style="width: 48%; min-width: 250px; background-color: #f9f9f9; border: 1px solid #eeeeee; border-radius: 6px; padding: 15px; box-sizing: border-box; margin-bottom: 15px;">
+                                    <h3 style="font-size: 15px; margin-top: 0; color: #555555;">Billing Address</h3>
+                                    <p style="font-size: 14px; margin: 0; line-height: 1.5;">
+                                        {# Use order fields directly #}
+                                        {{ order.billing_full_name }}<br>
+                                        {{ order.billing_address1 }}{% if order.billing_address2 %}, {{ order.billing_address2 }}{% endif %}<br>
+                                        {{ order.billing_city }}, {{ order.billing_state }} - {{ order.billing_zipcode }}<br>
+                                        {{ order.billing_country }}<br>
+                                        Phone: {{ order.billing_phone }}<br>
+                                        Email: {{ order.billing_email }}
+                                    </p>
+                                </div>
+                                <div class="address-box" style="width: 48%; min-width: 250px; background-color: #f9f9f9; border: 1px solid #eeeeee; border-radius: 6px; padding: 15px; box-sizing: border-box; margin-bottom: 15px;">
+                                    <h3 style="font-size: 15px; margin-top: 0; color: #555555;">Shipping Address</h3>
+                                    <p style="font-size: 14px; margin: 0; line-height: 1.5;">
+                                        {# Use order fields directly #}
+                                        {{ order.shipping_full_name }}<br>
+                                        {{ order.shipping_address1 }}{% if order.shipping_address2 %}, {{ order.shipping_address2 }}{% endif %}<br>
+                                        {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_zipcode }}<br>
+                                        {{ order.shipping_country }}<br>
+                                        Phone: {{ order.shipping_phone }}<br>
+                                        Email: {{ order.shipping_email }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p style="font-size: 15px; margin-top: 20px; text-align: center;">You can view your invoice here: <a href="{{ invoice_link }}" class="button" style="display: inline-block; padding: 12px 25px; background-color: #3fd9b2; color: #ffffff; text-align: center; border-radius: 5px; font-size: 16px; font-weight: bold;">View Invoice</a></p>
+                            <p style="font-size: 15px; margin-top: 30px;">If you have any questions, please don't hesitate to contact us.</p>
+                            <p style="font-size: 15px;">Thank you,</p>
+                            <p style="font-size: 15px; font-weight: bold;">The Stellars Team</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="footer-section" style="background-color: #f8f8f8; padding: 20px; text-align: center; font-size: 12px; color: #777777; border-top: 1px solid #eeeeee;">
+                            <p style="margin: 0;">&copy; {{ order.created_at.year }} Stellars. All rights reserved.</p>
+                            <p style="margin: 5px 0 0;">Unit no 9, Ramjas Society, Farid Nagar, PN Road, Bhandup West, Mumbai, India, Pin: 400078</p>
+                            <p style="margin: 0;">Phone: +91 84510 31694</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
         </tr>
-        {% for item in items %}
-        <tr>
-            <td>{{ item.product.name }}</td>
-            <td>{{ item.quantity }}</td>
-            <td>&#8377; {{ item.price }}</td>
-        </tr>
-        {% endfor %}
     </table>
 
-
-    <h3>Shipping Charge: &#8377; {{ shipping_charge }}</h3>
-    <h3>Order Total: &#8377; {{ order.total }}</h3>
-    <h3>Final Total: &#8377; {{ final_total }}</h3>
-    <br>
-<p>Your order has been confirmed. You can view your invoice here: <a href="{{ invoice_link }}">View Invoice</a></p>
-
-
-</body>
-</html>
+</body></html>

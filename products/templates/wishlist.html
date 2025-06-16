@@ -8,22 +8,30 @@
 </head>
 <body>
 {% block content %}
-<div class="ht__bradcaump__area bradcaump--2">
-    <div class="google__map"><div class="map-contacts"><div id="googleMap2"></div></div></div>
-    <div class="ht__bradcaump__wrap">
-        <div class="container">
-            <div class="row"><div class="col-xs-12">
-                <div class="bradcaump__inner">
-                    <nav class="bradcaump-inner">
-                        <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
-                        <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
-                        <span class="breadcrumb-item active">Wishlist</span>
-                    </nav>
+        <!-- End Offset Wrapper -->
+        <div class="ht__bradcaump__area bradcaump--2" style="background-image: url('{% static 'images/bagst.png' %}'); background-repeat: no-repeat; background-size: cover; background-position: center center;">
+            <div class="google__map">
+                <div class="map-contacts">
+                    <div id="googleMap2"></div>
                 </div>
-            </div></div>
+            </div>
+            <div class="ht__bradcaump__wrap">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="bradcaump__inner">
+                                <nav class="bradcaump-inner">
+                                  <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
+                                  <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
+                                  <span class="breadcrumb-item active">Blog</span>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
+
 
 <div class="wishlist-area ptb--120 bg__white">
     <div class="container">

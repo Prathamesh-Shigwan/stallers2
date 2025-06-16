@@ -2,103 +2,182 @@
 
 {% block content %}
 <style>
-    .form-container {
-        background-color: #f8f9fa;
+    .edit-order-container {
+        max-width: 1100px;
+        margin: 20px auto;
         padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .form-container h2 {
-        text-align: center;
-        margin-bottom: 30px;
-        font-weight: 600;
-        color: #343a40;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-        padding: 15px;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
         background-color: #ffffff;
+        border: 1px solid #000000; /* Changed to solid black */
+        border-radius: 8px;
     }
 
-    .form-group label {
-        font-weight: 500;
-        margin-bottom: 5px;
-        display: block;
-        color: #495057;
-    }
-
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-size: 14px;
+    .edit-order-container h2 {
+        text-align: center;
+        margin-bottom: 35px;
+        font-weight: 600;
+        color: #333;
+        border: 1px solid #000000; /* Changed to solid black */
+        display: inline-block;
+        padding: 8px 20px;
+        left: 50%;
+        position: relative;
+        transform: translateX(-50%);
         background-color: #fff;
-        color: #212529;
-        appearance: none;
     }
 
-    .form-group select {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140' width='14' height='14'%3E%3Cpath fill='%23666' d='M0 25l70 70 70-70H0z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 12px;
+    .form-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px;
+    }
+
+    .left-column, .right-column {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .form-field {
+        margin-bottom: 20px;
+    }
+
+    .form-field label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #555;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #000000; /* Changed to solid black */
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .form-field .errorlist {
+        list-style-type: none;
+        padding: 0;
+        margin: 5px 0 0 0;
+        color: #dc3545;
+        font-size: 0.875em;
+    }
+
+    .address-box {
+        border: 1px solid #000000; /* Changed to solid black */
+        padding: 20px;
+        margin-top: 20px;
+        position: relative;
+    }
+
+    .address-box h3 {
+        position: absolute;
+        top: -15px;
+        left: 20px;
+        background-color: #ffffff;
+        padding: 0 10px;
+        margin: 0;
+        font-size: 1.1em;
+        font-weight: 600;
     }
 
     .form-actions {
-        display: flex;
-        justify-content: space-between;
+        width: 100%;
+        text-align: center;
         margin-top: 30px;
     }
+
+    .form-actions .btn {
+        padding: 10px 30px;
+        margin: 0 10px;
+    }
+
 </style>
 
-<div class="container mt-4">
-    <div class="form-container">
-        <h2>Edit Order</h2>
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+<div class="edit-order-container">
+    <h2>Edit order</h2>
 
-                    {% if field.name == "order_id" %}
-                        <input type="text" name="{{ field.name }}" value="{{ field.value }}" class="form-control" readonly />
+    <form method="POST">
+        {% csrf_token %}
 
-                    {% elif field.field.widget.input_type == "email" or "email" in field.name %}
-                        <input type="email" name="{{ field.name }}" value="{{ field.value }}" class="form-control" />
-
-                    {% elif field.name == "expected_delivery" %}
-                        <input type="date" name="{{ field.name }}" value="{{ field.value|date:'Y-m-d' }}" class="form-control" />
-
-                    {% elif "address" in field.name or field.name == "feedback_note" %}
-                        <textarea name="{{ field.name }}" class="form-control">{{ field.value }}</textarea>
-
-                    {% else %}
-                        {{ field }}
-                    {% endif %}
-
-                    {% if field.help_text %}
-                        <small class="form-text text-muted">{{ field.help_text }}</small>
-                    {% endif %}
-                    {% for error in field.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+        <div class="form-wrapper">
+            <div class="left-column">
+                <div class="form-field">
+                    <label for="{{ form.user.id_for_label }}">User</label>
+                    {{ form.user }}
+                    {{ form.user.errors }}
                 </div>
-            {% endfor %}
+                <div class="form-field">
+                    <label for="{{ form.total.id_for_label }}">Total</label>
+                    {{ form.total }}
+                    {{ form.total.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.expected_delivery.id_for_label }}">Expected delivery</label>
+                    {{ form.expected_delivery }}
+                    {{ form.expected_delivery.errors }}
+                </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="{% url 'custom_admin:order_list' %}" class="btn btn-secondary">Cancel</a>
+                <div class="address-box">
+                    <h3>Shipping Address</h3>
+                    <div class="form-field"><label for="{{ form.shipping_full_name.id_for_label }}">Full Name</label>{{ form.shipping_full_name }}{{ form.shipping_full_name.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_email.id_for_label }}">Email</label>{{ form.shipping_email }}{{ form.shipping_email.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_address1.id_for_label }}">Address Line 1</label>{{ form.shipping_address1 }}{{ form.shipping_address1.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_address2.id_for_label }}">Address Line 2</label>{{ form.shipping_address2 }}{{ form.shipping_address2.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_city.id_for_label }}">City</label>{{ form.shipping_city }}{{ form.shipping_city.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_state.id_for_label }}">State</label>{{ form.shipping_state }}{{ form.shipping_state.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_zipcode.id_for_label }}">ZIP Code</label>{{ form.shipping_zipcode }}{{ form.shipping_zipcode.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_country.id_for_label }}">Country</label>{{ form.shipping_country }}{{ form.shipping_country.errors }}</div>
+                    <div class="form-field"><label for="{{ form.shipping_phone.id_for_label }}">Phone</label>{{ form.shipping_phone }}{{ form.shipping_phone.errors }}</div>
+                </div>
+
+                <div class="form-field">
+                    <label for="{{ form.feedback_note.id_for_label }}">Feedback note</label>
+                    {{ form.feedback_note }}
+                    {{ form.feedback_note.errors }}
+                </div>
             </div>
-        </form>
-    </div>
+
+            <div class="right-column">
+                <div class="form-field">
+                    <label for="{{ form.status.id_for_label }}">Status</label>
+                    {{ form.status }}
+                    {{ form.status.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.payment_method.id_for_label }}">Payment method</label>
+                    {{ form.payment_method }}
+                    {{ form.payment_method.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.expected_delivery_time.id_for_label }}">Expected delivery Time</label>
+                    {{ form.expected_delivery_time }}
+                    {{ form.expected_delivery_time.errors }}
+                </div>
+
+                <div class="address-box">
+                    <h3>Billing Address</h3>
+                    <div class="form-field"><label for="{{ form.billing_full_name.id_for_label }}">Full Name</label>{{ form.billing_full_name }}{{ form.billing_full_name.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_email.id_for_label }}">Email</label>{{ form.billing_email }}{{ form.billing_email.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_address1.id_for_label }}">Address Line 1</label>{{ form.billing_address1 }}{{ form.billing_address1.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_address2.id_for_label }}">Address Line 2</label>{{ form.billing_address2 }}{{ form.billing_address2.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_city.id_for_label }}">City</label>{{ form.billing_city }}{{ form.billing_city.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_state.id_for_label }}">State</label>{{ form.billing_state }}{{ form.billing_state.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_zipcode.id_for_label }}">ZIP Code</label>{{ form.billing_zipcode }}{{ form.billing_zipcode.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_country.id_for_label }}">Country</label>{{ form.billing_country }}{{ form.billing_country.errors }}</div>
+                    <div class="form-field"><label for="{{ form.billing_phone.id_for_label }}">Phone</label>{{ form.billing_phone }}{{ form.billing_phone.errors }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{% url 'custom_admin:order_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+
+    </form>
 </div>
 {% endblock %}

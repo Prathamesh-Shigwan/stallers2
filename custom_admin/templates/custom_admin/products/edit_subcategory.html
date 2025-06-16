@@ -3,33 +3,34 @@
 {% block content %}
 <div class="container mt-4" style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
     <h2 class="mb-3" style="color: #343a40; text-align: center; font-weight: 600;">Edit Subcategory</h2>
-    <form method="POST" enctype="multipart/form-data" style="max-width: 600px; margin: 0 auto;">
+
+    <form method="POST" enctype="multipart/form-data" style="max-width: 500px; margin: 0 auto; border: 1px solid #dee2e6; padding: 25px; border-radius: 8px;">
         {% csrf_token %}
         <div style="margin-bottom: 15px;">
-            <label for="id_title" style="display: block; font-weight: bold;">Title</label>
+            <label for="id_title" style="display: block; font-weight: bold; margin-bottom: 5px;">Title</label>
             <div style="border: 1px solid #ced4da; border-radius: 4px; padding: 8px;">
                 {{ form.title }}
             </div>
         </div>
 
         <div style="margin-bottom: 15px;">
-            <label for="id_main_category" style="display: block; font-weight: bold;">Main Category</label>
-            <div style="border: 1px solid #ced4da; border-radius: 4px; padding: 8px;">
-                {{ form.main_category }}
+            <label for="id_main_category" style="display: block; font-weight: bold; margin-bottom: 5px;">Main Category</label>
+            <div style="/* Removed border and padding from this div */">
+                {{ form.main_category.as_widget }}
             </div>
         </div>
 
         <div style="margin-bottom: 15px;">
-            <label for="id_price" style="display: block; font-weight: bold;">Price</label>
+            <label for="id_price" style="display: block; font-weight: bold; margin-bottom: 5px;">Price</label>
             <div style="border: 1px solid #ced4da; border-radius: 4px; padding: 8px;">
                 {{ form.price }}
             </div>
         </div>
 
         <div style="margin-bottom: 15px;">
-            <label for="id_image" style="display: block; font-weight: bold;">Image</label>
+            <label for="id_image" style="display: block; font-weight: bold; margin-bottom: 5px;">Image</label>
             <div style="position: relative;">
-                <label style="display: inline-block; padding: 8px 16px; border: 1px solid #ced4da; border-radius: 4px; background-color: #e9ecef; cursor: pointer;">
+                <label style="display: inline-block; padding: 8px 16px; border: 1px solid #007bff; border-radius: 4px; background-color: #007bff; color: white; cursor: pointer; transition: background-color 0.2s ease;">
                     Choose Image
                     <input type="file" name="image" id="id_image" style="display: none;">
                 </label>
@@ -41,11 +42,11 @@
             </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <button type="submit" class="btn btn-primary" style="background-color: #007bff; border-color: #007bff; font-weight: bold; padding: 10px 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+            <button type="submit" class="btn btn-primary" style="background-color: #007bff; border-color: #007bff; font-weight: bold; padding: 10px 20px; border-radius: 5px;">
                 Save Changes
             </button>
-            <a href="{% url 'custom_admin:subcategories' %}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; font-weight: bold; padding: 10px 20px; color: white; text-decoration: none;">
+            <a href="{% url 'custom_admin:subcategories' %}" class="btn btn-secondary" style="background-color: #6c757d; border-color: #6c757d; font-weight: bold; padding: 10px 20px; color: white; text-decoration: none; border-radius: 5px;">
                 Cancel
             </a>
         </div>
@@ -60,8 +61,38 @@
         if (this.files && this.files.length > 0) {
             fileNameDisplay.textContent = this.files[0].name;
         } else {
-            fileNameDisplay.textContent = '';
+            // If no new file is selected, revert to showing the current file name if it exists
+            const currentImageName = "{% if form.instance.image %}{{ form.instance.image.name }}{% endif %}";
+            fileNameDisplay.textContent = currentImageName ? "Current: " + currentImageName : "";
         }
     });
 </script>
+
+<style>
+    /* Styling for the dropdown menu */
+    #id_main_category {
+        width: 100%; /* Make it take full width of its container */
+        padding: 10px; /* Add some padding inside */
+        border: 1px solid #ced4da; /* Consistent border with other inputs */
+        border-radius: 4px; /* Rounded corners */
+        background-color: #fff; /* White background */
+        font-size: 1rem; /* Standard font size */
+        line-height: 1.5; /* Line height for better spacing */
+        color: #495057; /* Text color */
+        appearance: none; /* Remove default browser styling for select */
+        -webkit-appearance: none; /* For Webkit browsers */
+        -moz-appearance: none; /* For Mozilla browsers */
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); /* Custom arrow */
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; /* Smooth transitions */
+    }
+
+    #id_main_category:focus {
+        border-color: #80bdff; /* Blue border on focus */
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Light blue shadow on focus */
+    }
+</style>
 {% endblock %}

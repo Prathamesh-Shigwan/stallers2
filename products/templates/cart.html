@@ -12,28 +12,29 @@
 
 {% block content %}
 {% if items %}
-<div class="ht__bradcaump__area bradcaump--2">
-    <div class="google__map">
-        <div class="map-contacts">
-            <div id="googleMap2"></div>
-        </div>
-    </div>
-    <div class="ht__bradcaump__wrap">
-        <div class="container">
-            <div class="row">
-                <div class="col-xs-12">
-                    <div class="bradcaump__inner">
-                        <nav class="bradcaump-inner">
-                            <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
-                            <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
-                            <span class="breadcrumb-item active">Cart</span>
-                        </nav>
+        <div class="ht__bradcaump__area bradcaump--2" style="background-image: url('{% static 'images/bagst.png' %}'); background-repeat: no-repeat; background-size: cover; background-position: center center;">
+            <div class="google__map">
+                <div class="map-contacts">
+                    <div id="googleMap2"></div>
+                </div>
+            </div>
+            <div class="ht__bradcaump__wrap">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="bradcaump__inner">
+                                <nav class="bradcaump-inner">
+                                  <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
+                                  <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
+                                  <span class="breadcrumb-item active">Cart</span>
+                                </nav>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+
 
 <div class="cart-main-area ptb--120 bg__white">
     <div class="container">
@@ -55,7 +56,7 @@
                         <tbody>
                             {% for item in items %}
                                 {% with v=item.product_variant %}
-                                    {% with s=v.size_options.first %}
+                                    {% with s=v.size_options.first %} {# Assuming size_options has a 'first' method to get the default size #}
                                         <tr>
                                             <td class="product-thumbnail">
                                                 <a href="#">
@@ -73,10 +74,10 @@
                                                 {% endif %}
                                                 <ul class="pro__prize">
                                                     <li class="old__prize">
-                                                        Rs. {% if s and s.old_price %}{{ s.old_price }}{% else %}-{% endif %}
+                                                        Rs. {% if s and s.old_price %}{{ s.old_price|floatformat:2 }}{% else %}-{% endif %}
                                                     </li>
                                                     <li>
-                                                        Rs. {% if s %}{{ s.price }}{% else %}-{% endif %}
+                                                        Rs. {% if s %}{{ s.price|floatformat:2 }}{% else %}-{% endif %}
                                                     </li>
                                                 </ul>
                                             </td>
@@ -84,7 +85,7 @@
                                                 {{ item.selected_size|default:s.size }}
                                             </td>
                                             <td class="product-price">
-                                                Rs. {% if s %}{{ s.price }}{% else %}-{% endif %}
+                                                Rs. {% if s %}{{ s.price|floatformat:2 }}{% else %}-{% endif %}
                                             </td>
                                             <td class="product-quantity">
                                                 <input type="number" value="{{ item.quantity }}" name="quantity_{{ item.id }}"
@@ -92,7 +93,7 @@
                                                     min="1"
                                                     max="{% if v %}{{ v.stock_quantity }}{% else %}{{ item.product.inventory.stock_quantity }}{% endif %}">
                                             </td>
-                                            <td class="product-subtotal" id="line-total-{{ item.id }}">&#8377; {{ item.line_total }}</td>
+                                            <td class="product-subtotal" id="line-total-{{ item.id }}">&#8377; {{ item.line_total|floatformat:2 }}</td>
                                             <td class="product-remove">
                                                 <a href="{% url 'products:remove_from_cart' item.id %}"><i class="icon-trash icons"></i></a>
                                             </td>
@@ -115,7 +116,6 @@
                     {% endfor %}
                 {% endif %}
 
-                <!-- Coupon Form -->
                 <div class="cart__coupon mt--30">
                     <h6 class="mb-3" style="font-weight: 600; font-size: 20px; color: #3fd9b2;">Apply Discount Code</h6>
                     <form id="coupon-form" action="javascript:void(0);" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #f9f9f9; padding: 20px; border-radius: 10px;">
@@ -131,7 +131,6 @@
                     <div id="coupon-message" style="margin-top: 15px; font-size: 15px;"></div>
                 </div>
 
-                <!-- Totals -->
                 <div class="htc__cart__total">
                     <h6>Cart Total</h6>
                     <div class="cart__desk__list">
@@ -144,12 +143,14 @@
                             {% endif %}
                         </ul>
                         <ul class="cart__price">
-                            <li id="cart-subtotal">&#8377; {{ total }}</li>
-                            <li id="cart-shipping">&#8377; {{ shipping|default:"0.00" }}</li>
-                            <li id="discount-value">- &#8377; {{ discount|default:"0.00" }}</li>
+                            {# Displaying the pre-discount subtotal #}
+                            <li id="cart-subtotal">&#8377; {{ subtotal|floatformat:2 }}</li>
+                            <li id="cart-shipping">&#8377; {{ shipping|default:"0.00"|floatformat:2 }}</li>
+                            {# Displaying the calculated discount amount #}
+                            <li id="discount-value">- &#8377; {{ discount|default:"0.00"|floatformat:2 }}</li>
                             {% if cart.discount_code %}
                                 <li id="coupon-applied" style="font-weight: 600; display: flex; align-items: center; gap: 10px;">
-                                    {{ cart.discount_code }}
+                                    {{ cart.discount_code.code }} {# Displaying the actual code string #}
                                     <button id="remove-coupon-inline" class="btn btn-danger btn-sm" style="padding: 2px 8px; font-size: 12px;">Remove</button>
                                 </li>
                             {% endif %}
@@ -157,13 +158,15 @@
                     </div>
 
                     <div class="cart__total" style="margin-top: 20px;">
-                        <span id="cart-total" style="font-size: 24px; font-weight: 700;">Total : &#8377; {{ final_total }}</span>
+                        {# This is the cart total after discount, BEFORE shipping #}
+                        <span id="cart-total-display" style="font-size: 24px; font-weight: 700;">Cart Total : &#8377; {{ cart.total|floatformat:2 }}</span>
                     </div>
 
                     <hr style="margin: 10px 0; border-color: #eee;">
 
                     <div style="margin-top: 5px; font-size: 14px; color: #666;">
-                        <em>Including ₹ {{ total|mul:0.18|floatformat:2 }} tax (18% on product subtotal)</em>
+                        {# Tax calculation should be based on subtotal #}
+                        <em>Including ₹ {{ subtotal|mul:0.18|floatformat:2 }} tax (18% on product subtotal)</em>
                     </div>
 
                     <ul class="payment__btn" style="margin-top: 20px;">
@@ -188,7 +191,7 @@
         });
 
         function updateCartItem(itemId, quantity) {
-            fetch(`{% url 'products:update_cart_item' %}`, {
+            fetch(`{% url 'products:update_cart_item' %}`, { // Ensure this URL is correct and returns updated totals
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -200,9 +203,21 @@
             .then(data => {
                 if (data.success) {
                     document.getElementById(`line-total-${itemId}`).innerText = `₹ ${data.new_line_total.toFixed(2)}`;
-                    document.getElementById('cart-total').innerText = `Total : ₹ ${data.final_total.toFixed(2)}`;
-                    document.getElementById('cart-subtotal').innerText = `₹ ${data.cart_total.toFixed(2)}`;
+
+                    // Update the cart summary section based on the new backend logic
+                    document.getElementById('cart-subtotal').innerText = `₹ ${data.cart_subtotal.toFixed(2)}`; // Updated subtotal
+                    document.getElementById('discount-value').innerText = `- ₹ ${data.discount.toFixed(2)}`; // Updated discount amount
+                    document.getElementById('cart-total-display').innerText = `Cart Total : ₹ ${data.cart_total_after_discount.toFixed(2)}`; // Updated discounted total (cart.total)
                     document.getElementById('cart-shipping').innerText = `₹ ${data.shipping.toFixed(2)}`;
+
+                    // If you have a specific element for the grand final total (cart.total + shipping)
+                    // You would update it here, using data.final_total from the backend.
+                    // For example: document.getElementById('grand-final-total-checkout').innerText = `₹ ${data.final_total.toFixed(2)}`;
+
+                    // Optionally, you might want to re-calculate and update the tax display if it's dynamic
+                    // const newTax = (data.cart_subtotal * 0.18).toFixed(2);
+                    // document.querySelector('.htc__cart__total em').innerHTML = `Including ₹ ${newTax} tax (18% on product subtotal)`;
+
                 } else {
                     alert('Failed to update cart item: ' + data.error);
                 }
@@ -230,8 +245,16 @@
                     msg.innerText = data.message;
                     msg.style.color = data.success ? 'green' : 'red';
                     if (data.success) {
+                        // Reload the page to fully update all displayed totals and coupon info
+                        // This is simpler than trying to update every single element dynamically
                         setTimeout(() => location.reload(), 1000);
                     }
+                })
+                .catch(error => {
+                    console.error('Error applying coupon:', error);
+                    const msg = document.getElementById('coupon-message');
+                    msg.innerText = 'An error occurred while applying coupon.';
+                    msg.style.color = 'red';
                 });
             });
         }
@@ -257,6 +280,7 @@
                 msg.innerText = data.message;
                 msg.style.color = 'orange';
                 if (data.success) {
+                    // Reload the page to fully update all displayed totals
                     setTimeout(() => location.reload(), 1000);
                 }
             })
@@ -269,7 +293,6 @@
 </script>
 
 {% else %}
-<!-- EMPTY CART PAGE -->
 <div style="text-align: center; padding: 100px 20px;">
     <img src="{% static 'images/cart/empty-cart.png' %}" alt="Empty Cart" style="max-width: 400px; width: 100%; height: auto;">
     <p style="font-size: 20px; color: #666; margin-top: 20px;">Your cart is empty</p>

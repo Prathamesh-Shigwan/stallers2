@@ -50,6 +50,26 @@
         font-size: 13px;
         border-radius: 4px;
     }
+
+    /* --- New Styles for Progress Bar --- */
+    .progress-container {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        margin-top: 10px;
+        display: none; /* Hidden by default */
+    }
+
+    .progress-bar {
+        width: 0%;
+        height: 20px;
+        background-color: #4CAF50; /* Green */
+        text-align: center;
+        color: white;
+        line-height: 20px;
+        border-radius: 5px;
+        transition: width 0.3s ease-in-out; /* Smooth transition for width change */
+    }
 </style>
 
 <script type="text/javascript" src="{% static 'tinymce/tinymce.min.js' %}"></script>
@@ -67,7 +87,7 @@
 <div class="container mt-4">
     <div class="form-container">
         <h2 class="text-center fw-semibold text-dark">Add Blog</h2>
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" id="blog-form"> {# Add an ID to the form #}
             {% csrf_token %}
 
             <div class="form-group">
@@ -90,10 +110,14 @@
                 <label for="id_image" class="custom-file-upload">Choose Image</label>
                 {{ form.image }}
                 <br><small id="image-label">Not selected</small>
+                {# --- Progress Bar HTML --- #}
+                <div id="progress-container" class="progress-container">
+                    <div id="progress-bar" class="progress-bar">0%</div>
+                </div>
             </div>
 
             <div class="d-flex justify-content-between">
-                <button type="submit" class="btn btn-success btn-sm">Add Blog</button>
+                <button type="submit" class="btn btn-success btn-sm" id="submit-button">Add Blog</button> {# Add an ID #}
                 <a href="{% url 'custom_admin:blog_list' %}" class="btn btn-secondary btn-sm">Cancel</a>
             </div>
         </form>
@@ -103,11 +127,46 @@
 <script>
     const imageInput = document.getElementById('id_image');
     const imageLabel = document.getElementById('image-label');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const blogForm = document.getElementById('blog-form');
+    const submitButton = document.getElementById('submit-button');
+
     if (imageInput) {
         imageInput.addEventListener('change', () => {
-            imageLabel.textContent = imageInput.files.length ? imageInput.files[0].name : 'Not selected';
+            if (imageInput.files.length) {
+                const fileName = imageInput.files[0].name;
+                imageLabel.textContent = fileName;
+                // Show the progress bar and indicate "Preparing to upload..."
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '20%'; // Start with a small progress
+                progressBar.textContent = 'Preparing...';
+                submitButton.disabled = false; // Enable button if an image is selected
+            } else {
+                imageLabel.textContent = 'Not selected';
+                // Hide and reset progress bar if no file is selected
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+                progressBar.textContent = '0%';
+                submitButton.disabled = false; // Ensure button is enabled if image is removed
+            }
         });
     }
+
+    // When the form is submitted, visually "complete" the progress bar
+    // This is a visual trick, as true progress requires XHR.
+    blogForm.addEventListener('submit', () => {
+        if (imageInput.files.length) { // Only update if an image was selected
+            submitButton.disabled = true; // Disable button to prevent multiple submissions
+            progressBar.style.width = '100%';
+            progressBar.textContent = 'Uploading... Please wait!';
+        }
+        // Small delay to ensure the visual update happens before form submission
+        // (Though the browser handles the actual submission asynchronously after this JS)
+        setTimeout(() => {
+            // This timeout is mostly for visual effect. The form will submit.
+        }, 100);
+    });
 </script>
 
 {% endblock %}

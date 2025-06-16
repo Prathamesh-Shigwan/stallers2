@@ -12,7 +12,6 @@
           </p>
         </div>
         <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
-
 </div>
 <div class="row">
     <div class="col-12 mb-3">
@@ -32,8 +31,7 @@
     </div>
 </div>
 <div class="row">
-        <!-- Total Sales -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -49,23 +47,19 @@
         </div>
     </div>
 
-        <!-- Total Orders -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
         <div class="card-header p-2 ps-3">
             <div class="d-flex justify-content-between">
                 <div>
                     <p class="text-sm mb-0 text-capitalize">Total Orders</p>
-                    <h4 class="mb-0">{{ total_orders }}</h4> <!-- Display total orders -->
-                </div>
+                    <h4 class="mb-0">{{ total_orders }}</h4> </div>
                 <div>
                     <p class="text-sm mb-0 text-capitalize">Pre-Paid</p>
-                    <h4 class="mb-0">{{ prepaid_orders }}</h4> <!-- Display total orders -->
-                </div>
+                    <h4 class="mb-0">{{ prepaid_orders }}</h4> </div>
                 <div>
                     <p class="text-sm mb-0 text-capitalize">COD</p>
-                    <h4 class="mb-0">{{ cod_orders }}</h4> <!-- Display total orders -->
-                </div>
+                    <h4 class="mb-0">{{ cod_orders }}</h4> </div>
                 <div class="icon icon-md icon-shape bg-gradient-dark shadow-dark shadow text-center border-radius-lg">
                     <i class="material-symbols-rounded opacity-10">shopping_cart</i>
                 </div>
@@ -75,8 +69,7 @@
     </div>
     </div>
 
-        <!-- Total Products -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -93,8 +86,7 @@
         </div>
     </div>
 
-        <!-- Products in Cart -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -110,8 +102,7 @@
         </div>
     </div>
 
-        <!-- Cancel order   -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -127,8 +118,7 @@
         </div>
     </div>
 
-        <!-- Return order   -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -144,8 +134,7 @@
         </div>
     </div>
 
-        <!-- Replace order   -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -161,8 +150,7 @@
         </div>
     </div>
 
-        <!-- Total Customers -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -178,8 +166,7 @@
         </div>
     </div>
 
-        <!-- Blogs -->
-    <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-2 ps-3">
                 <div class="d-flex justify-content-between">
@@ -197,8 +184,7 @@
 
 
 
-                <!-- Visitors Count -->
-</div>
+                </div>
       </div>
       <div class="row">
           <div class="col-lg-4 col-md-6 mt-4 mb-4">
@@ -254,9 +240,12 @@
     </div>
 </div>
           <div class="d-flex gap-2 mb-4">
-    <a href="{% url 'custom_admin:download_weekly_order_report' %}" class="btn btn-outline-primary">Download Weekly Order Report</a>
-    <a href="{% url 'custom_admin:download_daily_sales_report' %}" class="btn btn-outline-primary">Download Daily Sales Report</a>
-    <a href="{% url 'custom_admin:download_monthly_sales_report' %}" class="btn btn-outline-primary">Download Monthly Sales Report</a>
+                <a href="{% url 'custom_admin:download_weekly_order_report' %}" class="btn btn-outline-primary">Download Weekly Order Report</a>
+                <a href="{% url 'custom_admin:download_daily_sales_report' %}" class="btn btn-outline-primary">Download Daily Sales Report</a>
+                <a href="{% url 'custom_admin:download_monthly_sales_report' %}" class="btn btn-outline-primary">Download Monthly Sales Report</a>
+                <a href="{% url 'custom_admin:export_orders_excel' %}" class="btn btn-outline-primary">Items Report</a>
+                <a href="{% url 'custom_admin:export_orders_summary_excel' %}" class="btn btn-outline-primary">Orders Report</a>
+
 </div>
 
       </div>
@@ -290,7 +279,14 @@
                             <td>
                                 <div class="d-flex px-2 py-1">
                                     <div>
-                                        <img src="{{ order.items.first.product.image.url }}" class="avatar avatar-sm me-3" alt="product">
+                                        {% with order.items.first as item %}
+                                            {% if item and item.product_variant and item.product_variant.image %}
+                                                <img src="{{ item.product_variant.image.url }}" class="avatar avatar-sm me-3" alt="{{ item.product.name }} - {{ item.product_variant.color }}">
+                                            {% else %}
+                                                {# Provide a path to a default image in your static files if no variant image #}
+                                                <img src="{% static 'img/default_product_image.png' %}" class="avatar avatar-sm me-3" alt="No Image">
+                                            {% endif %}
+                                        {% endwith %}
                                     </div>
                                 </div>
                             </td>

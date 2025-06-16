@@ -5,27 +5,28 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token }}">
     {% block title %}Product Details{% endblock %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 {% block content %}
 
 <section class="htc__product__details bg__white ptb--70">
     <div class="container">
         <div class="row">
-
-            <!-- Left: Main Image & Thumbnails -->
             <div class="col-md-6 col-sm-12">
-                <div id="variantMediaDisplay">
-                    <img id="variantMainImage" src="{{ variant.image.url }}" alt="" style="width: 100%; max-height: 600px; object-fit: contain;">
-                    {% if variant.video %}
-                    <video id="variantVideoTag" width="100%" controls style="display: none; margin-top: 10px; max-height: 600px;">
-                        <source id="variantVideoSource" src="{{ variant.video.url }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                    {% endif %}
+                <div id="mainMediaContainer" style="position: relative;">
+                    <div id="variantMediaDisplay" class="zoom-container">
+                        <img id="variantMainImage" src="{{ variant.image.url }}" alt="" style="width: 100%; max-height: 600px; object-fit: contain; transition: transform 0.1s ease-out;">
+                        {% if variant.video %}
+                        <video id="variantVideoTag" width="100%" controls style="display: none; margin-top: 10px; max-height: 600px;">
+                            <source id="variantVideoSource" src="{{ variant.video.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        {% endif %}
+                        <div class="zoom-window" style="display: none;"></div> {# This is the zoom window #}
+                    </div>
+                    <span class="scroll-arrow prev" id="prevMedia" style="display: none;">&#10094;</span>
+                    <span class="scroll-arrow next" id="nextMedia" style="display: none;">&#10095;</span>
                 </div>
-
-                <!-- Thumbnails Scroll -->
                 <div class="thumbnail-scroll-wrapper">
                     <div class="thumbnail-track" id="variantThumbnails">
                         <div class="thumbnail-box">
@@ -50,45 +51,45 @@
                 </div>
             </div>
 
-            <!-- Right: Product Info -->
             <div class="col-md-6 col-sm-12">
-                <h2 id="variantName" style="margin-bottom: 10px;">{{ product.name }}{% if variant.color %} – {{ variant.color }}{% endif %}</h2>
-
-<div id="variantPricing" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-    <span id="variantOldPrice" class="text-muted" style="text-decoration: line-through; display: none;"></span>
-    <span id="variantPrice" style="font-weight: bold; font-size: 20px;">₹{{ variant.size_options.first.price }}</span>
-    <span id="variantDiscount" class="discount-pill" style="display: none;"></span>
-</div>
-<style>
-.discount-pill {
-    background-color: #000;
-    color: #fff;
-    padding: 5px 12px;
-    border-radius: 30px;
-    font-size: 14px;
-    font-weight: 600;
-    display: inline-block;
-    min-width: 60px;
-    text-align: center;
-}
-</style>
-
-
-                <!-- Color Options -->
+                <h2 id="variantName" style="margin-bottom: 10px;">{{ product.name|capfirst }}{% if variant.color %} – {{ variant.color|capfirst }}{% endif %}</h2>
+                <div id="variantPricing" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                    <span id="variantOldPrice" class="text-muted" style="text-decoration: line-through; display: none;"></span>
+                    <span id="variantPrice" style="font-weight: bold; font-size: 20px;">₹{{ variant.size_options.first.price }}</span>
+                    <span id="variantDiscount" class="discount-pill" style="display: none;"></span>
+                </div>
+                <div id="averageRating" class="average-rating-display" style="margin-bottom: 20px;">
+                    {% if review_count > 0 %}
+                        <span class="star-rating">
+                            {% if average_rating == 5 %}★★★★★
+                            {% elif average_rating >= 4.5 %}★★★★✬
+                            {% elif average_rating >= 4 %}★★★★✩
+                            {% elif average_rating >= 3.5 %}★★★✬✩
+                            {% elif average_rating >= 3 %}★★★✩✩
+                            {% elif average_rating >= 2.5 %}★★✬✩✩
+                            {% elif average_rating >= 2 %}★★✩✩✩
+                            {% elif average_rating >= 1.5 %}★✬✩✩✩
+                            {% elif average_rating >= 1 %}★✩✩✩✩
+                            {% else %}✩✩✩✩✩
+                            {% endif %}
+                        </span>
+                        <a href="#reviews-section" class="review-count-link">({{ review_count }} customer reviews)</a>
+                    {% else %}
+                        <span class="no-reviews-yet">No reviews yet</span>
+                    {% endif %}
+                </div>
                 <div style="margin-bottom: 20px;">
                     <p style="font-weight: 600;">Color</p>
                     <ul class="pro__variants" style="display: flex; gap: 10px; padding-left: 0; list-style: none;">
                         {% for v in variants %}
                         <li>
-                            <a href="#" onclick="selectVariant('{{ v.id }}')">
+                            <a href="#" onclick="event.preventDefault(); selectVariant('{{ v.id }}')">
                                 <img src="{{ v.image.url }}" width="50" style="border: 1px solid #ccc; border-radius: 4px;">
                             </a>
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
-
-                <!-- Size Options -->
                 <div style="margin-bottom: 20px;">
                     <p style="font-weight: 600;">Size</p>
                     <div id="sizeOptions" class="size-options">
@@ -98,14 +99,10 @@
                     </div>
                     <input type="hidden" name="selected_size" id="selected-size-hidden">
                 </div>
-
-                <!-- Quantity -->
                 <div style="margin-bottom: 15px;">
                     <label for="product-quantity" style="font-weight: 600; margin-bottom: 6px; display: block;">Quantity</label>
                     <input class="cart-plus-minus-box" type="number" name="quantity" value="1" min="1" id="product-quantity" style="padding: 6px 12px; width: 80px;">
                 </div>
-
-                <!-- Add to Cart -->
                 <button id="add-to-cart-btn" data-pid="{{ product.pid }}" data-url="{% url 'products:add_to_cart' product.pid %}"
                         style="background-color: #3fd9b2; border: none; padding: 10px 20px; color: white; font-weight: 600; border-radius: 6px; cursor: pointer;">
                     Add To Cart
@@ -113,8 +110,6 @@
                 <input type="hidden" id="selectedVariantId" name="selected_variant_id" value="{{ variant.id }}">
             </div>
         </div>
-
-        <!-- Description & Specification -->
         <div class="row" style="margin-top: 40px;">
             <div class="col-xs-12">
                 <ul class="pro__details__tab" role="tablist">
@@ -128,20 +123,12 @@
                 <div class="tab-content">
                     <div role="tabpanel" id="description" class="tab-pane fade in active">
                         <div class="pro__tab__content__inner">
-                            {% if product.description %}
-                                <p>{{ product.description|linebreaks }}</p>
-                            {% else %}
-                                <p>No description available for this product.</p>
-                            {% endif %}
+                            {% if product.description %}<p>{{ product.description|linebreaks }}</p>{% else %}<p>No description available for this product.</p>{% endif %}
                         </div>
                     </div>
                     <div role="tabpanel" id="review" class="tab-pane fade">
                         <div class="pro__tab__content__inner">
-                            {% if product.specification %}
-                                <p>{{ product.specification|linebreaks }}</p>
-                            {% else %}
-                                <p>No specifications available for this product.</p>
-                            {% endif %}
+                            {% if product.specification %}<p>{{ product.specification|linebreaks }}</p>{% else %}<p>No specifications available for this product.</p>{% endif %}
                         </div>
                     </div>
                 </div>
@@ -150,85 +137,282 @@
     </div>
 </section>
 
+<section id="reviews-section" class="htc__product__reviews bg__white ptb--70">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="reviews-container">
+                    <h2 class="reviews-main-title">Customer Reviews</h2>
+
+                    {% if can_add_review %}
+                        <div id="review-form-section" class="review-form-wrapper">
+                            {% if user.is_authenticated %}
+                                {% if user_review and not is_editing %}
+                                    <div class="user-review-display">
+                                        <div class="review-card user-has-reviewed">
+                                            <div class="review-header">
+                                                <strong>You have already reviewed this product.</strong>
+                                                <a href="?edit={{ user_review.id }}#review-form-section" class="btn-edit-review">
+                                                    <i class="fa-regular fa-pen-to-square"></i> Edit
+                                                </a>
+                                            </div>
+                                            <p class="review-text">"{{ user_review.review }}"</p>
+                                            <div class="review-rating-static">{{ user_review.get_rating_display }}</div>
+                                        </div>
+                                    </div>
+                                {% elif is_editing or not user_review %}
+                                    <h4 class="review-form-title">{% if is_editing %}Edit Your Review{% else %}Write a Review{% endif %}</h4>
+                                    <form action="{% if is_editing %}{% url 'products:edit_review' review_to_edit.id %}{% else %}{% url 'products:add_review' product.pid %}{% endif %}" method="post" class="review-form">
+                                        {% csrf_token %}
+                                        <div class="form-group">
+                                            <label>Your Rating:</label>
+                                            <div class="star-rating-widget-unicode">
+                                                <span data-value="1">☆</span><span data-value="2">☆</span><span data-value="3">☆</span><span data-value="4">☆</span><span data-value="5">☆</span>
+                                            </div>
+                                            <div style="display: none;">{{ review_form.rating }}</div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="id_review">Your Review:</label>
+                                            {{ review_form.review }}
+                                        </div>
+                                        <div class="form-actions">
+                                            <button type="submit" class="btn-submit-review">
+                                                {% if is_editing %}Update Review{% else %}Submit Review{% endif %}
+                                            </button>
+                                            {% if is_editing %}
+                                                <a href="{% url 'products:product_details' product.pid %}#reviews-section" class="btn-cancel-edit">Cancel</a>
+                                            {% endif %}
+                                        </div>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <hr class="reviews-divider">
+
+                    <div class="existing-reviews-list">
+                        {% for review in page_obj %}
+                            <div class="review-card">
+                                <div class="review-header">
+                                    <strong class="review-user">{{ review.user.username }}</strong>
+                                    <span class="review-rating-static">{{ review.get_rating_display }}</span>
+                                </div>
+                                <p class="review-text">"{{ review.review }}"</p>
+                                <small class="review-meta">
+                                    {{ review.date|date:"F j, Y" }}
+                                    {% if review.verified_purchase %}
+                                        <span class="verified-badge">
+                                            <i class="fa-solid fa-check"></i> Verified Purchase
+                                        </span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                        {% empty %}
+                             <p class="no-reviews-yet">This product has no reviews yet.</p>
+                        {% endfor %}
+                    </div>
+
+                    {% if page_obj.paginator.num_pages > 1 %}
+                        <nav class="pagination-nav">
+                           </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <style>
-.thumbnail-scroll-wrapper {
-    overflow-x: auto;
-    margin-top: 15px;
-    padding-bottom: 6px;
-}
-.thumbnail-scroll-wrapper::-webkit-scrollbar {
-    height: 6px;
-}
-.thumbnail-scroll-wrapper::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-}
-.thumbnail-track {
-    display: flex;
-    gap: 10px;
-    width: max-content;
-}
-.thumbnail-box {
-    flex: 0 0 auto;
-    width: 20%;
-    aspect-ratio: 1 / 1;
-    max-width: 100px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    overflow: hidden;
+/* ... your existing styles ... */
+/* NEW: Styles for Scroll Arrows */
+.scroll-arrow {
     cursor: pointer;
-}
-.thumbnail-box img,
-.thumbnail-box video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.video-thumbnail {
-    position: relative;
-}
-.video-thumbnail .video-icon-overlay {
     position: absolute;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 20px;
+    transform: translateY(-50%);
+    width: auto;
+    padding: 16px;
     color: white;
-    pointer-events: none;
-}
-.size-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-.size-option {
-    border: 2px solid #ccc;
-    border-radius: 4px;
-    padding: 12px 18px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
+    font-weight: bold;
+    font-size: 24px;
+    background-color: rgba(0, 0, 0, 0.3);
+    transition: background-color 0.6s ease;
+    border-radius: 3px;
     user-select: none;
-    text-align: center;
-    min-width: 50px;
+    -webkit-user-select: none;
+    z-index: 10;
 }
-.size-option:hover {
-    border-color: #007bff;
+.scroll-arrow.prev { left: 0; border-radius: 0 3px 3px 0; }
+.scroll-arrow.next { right: 0; border-radius: 3px 0 0 3px; }
+.scroll-arrow:hover { background-color: rgba(0, 0, 0, 0.8); }
+
+/* ... your existing styles for product, variants, etc. ... */
+.discount-pill { background-color: #000; color: #fff; padding: 5px 12px; border-radius: 30px; font-size: 14px; font-weight: 600; display: inline-block; min-width: 60px; text-align: center; }
+.thumbnail-scroll-wrapper { overflow-x: auto; margin-top: 15px; padding-bottom: 6px; }
+.thumbnail-scroll-wrapper::-webkit-scrollbar { height: 6px; }
+.thumbnail-scroll-wrapper::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+.thumbnail-track { display: flex; gap: 10px; width: max-content; }
+.thumbnail-box { flex: 0 0 auto; width: 20%; aspect-ratio: 1 / 1; max-width: 100px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; cursor: pointer; }
+.thumbnail-box img, .thumbnail-box video { width: 100%; height: 100%; object-fit: cover; }
+.video-thumbnail { position: relative; }
+.video-thumbnail .video-icon-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; color: white; pointer-events: none; }
+.size-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.size-option { border: 2px solid #ccc; border-radius: 4px; padding: 12px 18px; font-weight: 600; cursor: pointer; transition: 0.2s; user-select: none; text-align: center; min-width: 50px; }
+.size-option:hover { border-color: #007bff; }
+.size-option.selected { border-color: #007bff; color: #007bff; }
+.average-rating-display .star-rating { color: #f8b704; font-size: 18px; letter-spacing: 2px; }
+.average-rating-display .review-count-link { margin-left: 10px; text-decoration: underline; color: #555; }
+.average-rating-display .no-reviews-yet { color: #777; }
+
+/* ... your existing styles for the review section ... */
+/* Main container for the entire review section */
+.reviews-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 30px 40px;
+    background-color: #ffffff;
 }
-.size-option.selected {
-    border-color: #007bff;
-    color: #007bff;
+.reviews-main-title { font-size: 28px; font-weight: 700; margin-bottom: 25px; text-align: center; color: #343a40; }
+.review-form-wrapper { background-color: #f8f9fa; padding: 25px; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 30px; }
+.review-form-title { font-size: 22px; font-weight: 600; margin-top: 0; margin-bottom: 20px; }
+.review-card { border: none; border-bottom: 1px solid #e9ecef; padding: 20px 0; margin-bottom: 0; background-color: transparent; box-shadow: none; }
+.existing-reviews-list .review-card:last-child { border-bottom: none; padding-bottom: 0; }
+.user-has-reviewed { background-color: #dcf7ea; border: 1px solid #bde0fe; padding: 20px; border-radius: 8px; }
+.user-has-reviewed .review-header strong { color: #3fd9b2; }
+.review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.review-user { font-size: 1.1em; font-weight: bold; }
+.review-rating-static { color: #f8b704; font-size: 16px; letter-spacing: 2px; }
+.review-text { margin-bottom: 15px; color: #495057; line-height: 1.6; font-style: italic; }
+.review-meta { font-size: 0.9em; color: #6c757d; }
+.verified-badge { color: #28a745; font-weight: 500; margin-left: 10px; }
+.verified-badge i { font-size: 0.8em; }
+.reviews-divider { margin-top: 30px; margin-bottom: 30px; border: 0; border-top: 1px solid #e9ecef; }
+.form-group { margin-bottom: 1.5rem; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #495057; }
+#id_review { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 5px; min-height: 120px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; }
+#id_review:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+.star-rating-widget-unicode > span { font-size: 30px; color: #adb5bd; cursor: pointer; transition: all 0.2s ease-in-out; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+.star-rating-widget-unicode > span:hover, .star-rating-widget-unicode > span.selected { color: #f8b704; transform: scale(1.15); }
+.form-actions { margin-top: 25px; }
+.btn-submit-review { background-color: #3fd9b2; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: 500; font-size: 1rem; transition: background-color 0.2s; }
+.btn-submit-review:hover { background-color: #0056b3; }
+.btn-cancel-edit { margin-left: 15px; color: #6c757d; text-decoration: none; font-weight: 500; }
+.btn-cancel-edit:hover { text-decoration: underline; }
+.btn-edit-review { background-color: #f1f3f5; color: #495057; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-weight: 500; font-size: 0.9em; border: 1px solid #dee2e6; transition: all 0.2s; }
+.btn-edit-review:hover { background-color: #e9ecef; color: #212529; border-color: #adb5bd; }
+.btn-edit-review i { margin-right: 5px; }
+.login-prompt a { color: #007bff; font-weight: 500; }
+.pagination-nav { display: flex; justify-content: center; margin-top: 30px; }
+.pagination { display: flex; padding-left: 0; list-style: none; border-radius: 0.25rem; }
+.page-item { margin: 0 2px; }
+.page-item .page-link { position: relative; display: block; padding: 0.5rem 0.75rem; line-height: 1.25; color: #3fd9b2; background-color: #fff; border: 1px solid #dee2e6; text-decoration: none; transition: all 0.2s; }
+.page-item .page-link:hover { background-color: #e9ecef; border-color: #dee2e6; }
+.page-item.active .page-link { z-index: 1; color: #fff; background-color: #3fd9b2; border-color: #3fd9b2; }
+.page-item.disabled .page-link { color: #6c757d; pointer-events: none; background-color: #fff; border-color: #dee2e6; }
+</style>
+
+<style>
+/* New styles for Image Zoom functionality */
+.zoom-container {
+    position: relative;
+    overflow: hidden; /* Important to hide the scaled main image initially */
+}
+
+.zoom-window {
+    position: absolute;
+    width: 150px; /* Adjust as needed */
+    height: 150px; /* Adjust as needed */
+    background-repeat: no-repeat;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    display: none; /* Hidden by default */
+    z-index: 999; /* Ensure it's on top */
+    /* Example positioning to the right of the main image */
+    left: 105%; /* Adjust based on your layout and desired gap */
+    top: 0;
+}
+
+#variantMainImage.zoomed {
+    transform: scale(2); /* Adjust zoom level as needed (e.g., 2 for 200%, 3 for 300%) */
+    transform-origin: 0% 0%; /* Will be dynamically updated by JS */
+    cursor: crosshair; /* Indicates zoomable area */
 }
 </style>
 
 <script>
+// Function to handle size selection
+function selectSize(element, size) {
+    document.querySelectorAll('.size-option').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    document.getElementById('selected-size-hidden').value = size;
+
+    // Get current variant ID
+    const variantId = document.getElementById('selectedVariantId').value;
+
+    // Fetch updated price for the selected size
+    fetch(`/products/get_size_price/${variantId}/${size}/`)
+        .then(response => response.json())
+        .then(data => {
+            const priceElem = document.getElementById('variantPrice');
+            const oldPriceElem = document.getElementById('variantOldPrice');
+            const discountElem = document.getElementById('variantDiscount');
+
+            priceElem.innerText = `₹${data.price}`;
+
+            if (data.old_price && parseFloat(data.old_price) > parseFloat(data.price)) {
+                oldPriceElem.style.display = 'inline';
+                oldPriceElem.innerText = `₹${data.old_price}`;
+                const discount = Math.round((parseFloat(data.old_price) - parseFloat(data.price)) / parseFloat(data.old_price) * 100);
+                discountElem.innerText = `${discount}% OFF`;
+                discountElem.style.display = 'inline-block';
+            } else {
+                oldPriceElem.style.display = 'none';
+                discountElem.style.display = 'none';
+            }
+        })
+        .catch(error => console.error('Error fetching size price:', error));
+}
+
+
+// Function to change main media (image/video)
+function setMedia(url, isVideo = false) {
+    const imageTag = document.getElementById('variantMainImage');
+    const videoTag = document.getElementById('variantVideoTag');
+    const videoSource = document.getElementById('variantVideoSource');
+    const zoomWindow = document.querySelector('.zoom-window'); // Get zoom window
+
+    if (isVideo) {
+        imageTag.style.display = 'none';
+        zoomWindow.style.display = 'none'; // Hide zoom window for video
+        if (videoTag) {
+            videoTag.style.display = 'block';
+            videoSource.src = url;
+            videoTag.load();
+            videoTag.play(); // Auto-play video when selected
+        }
+        mainImage.classList.remove('zoomed'); // Ensure zoom class is removed
+    } else {
+        if (videoTag) {
+            videoTag.style.display = 'none';
+            videoTag.pause(); // Pause video if switching to image
+        }
+        imageTag.style.display = 'block';
+        imageTag.src = url;
+        // Re-initialize zoom for the new image if it's not a video
+        setupImageZoom();
+    }
+}
+
+// Function to handle variant selection
 function selectVariant(variantId) {
     document.getElementById('selectedVariantId').value = variantId;
-
     fetch(`/products/get_variant_data/${variantId}/`)
         .then(response => response.json())
         .then(data => {
-            // Elements
             const imageTag = document.getElementById('variantMainImage');
             const videoTag = document.getElementById('variantVideoTag');
             const videoSource = document.getElementById('variantVideoSource');
@@ -237,21 +421,32 @@ function selectVariant(variantId) {
             const oldPriceElem = document.getElementById('variantOldPrice');
             const discountElem = document.getElementById('variantDiscount');
 
-            // Main image
+            // Reset media display to image first
             imageTag.src = data.image;
             imageTag.style.display = 'block';
-            if (videoTag) videoTag.style.display = 'none';
+            if (videoTag) {
+                videoTag.style.display = 'none';
+                videoTag.pause(); // Ensure video is paused
+            }
 
-            // Name
-            nameElem.innerText = data.name;
+            // Update variant name
+            if (data.name) {
+                const capitalizedName = data.name
+                    .split(' – ')
+                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join(' – ');
+                nameElem.innerText = capitalizedName;
+            }
 
-            // Initial price (first size)
-            priceElem.innerText = `₹${data.price}`;
-            if (data.old_price && parseFloat(data.old_price) > parseFloat(data.price)) {
+            // Update pricing (display first size option's price by default)
+            let defaultPrice = data.sizes.length > 0 ? data.sizes[0].price : 'N/A';
+            let defaultOldPrice = data.sizes.length > 0 ? data.sizes[0].old_price : null;
+
+            priceElem.innerText = `₹${defaultPrice}`;
+            if (defaultOldPrice && parseFloat(defaultOldPrice) > parseFloat(defaultPrice)) {
                 oldPriceElem.style.display = 'inline';
-                oldPriceElem.innerText = `₹${data.old_price}`;
-
-                const discount = Math.round((parseFloat(data.old_price) - parseFloat(data.price)) / parseFloat(data.old_price) * 100);
+                oldPriceElem.innerText = `₹${defaultOldPrice}`;
+                const discount = Math.round((parseFloat(defaultOldPrice) - parseFloat(defaultPrice)) / parseFloat(defaultOldPrice) * 100);
                 discountElem.innerText = `${discount}% OFF`;
                 discountElem.style.display = 'inline-block';
             } else {
@@ -259,44 +454,31 @@ function selectVariant(variantId) {
                 discountElem.style.display = 'none';
             }
 
-            // Size options
+            // Update size options
             const sizeOptionsDiv = document.getElementById('sizeOptions');
             const sizeHiddenInput = document.getElementById('selected-size-hidden');
             sizeOptionsDiv.innerHTML = '';
-            sizeHiddenInput.value = '';
+            sizeHiddenInput.value = ''; // Clear previously selected size
 
-            data.sizes.forEach(sizeObj => {
+            data.sizes.forEach((sizeObj, index) => {
                 const btn = document.createElement('div');
                 btn.classList.add('size-option');
                 btn.textContent = sizeObj.size;
+                btn.onclick = () => selectSize(btn, sizeObj.size); // Use the existing selectSize function
+                sizeOptionsDiv.appendChild(btn);
 
-                btn.onclick = () => {
-                    document.querySelectorAll('.size-option').forEach(b => b.classList.remove('selected'));
+                // Automatically select the first size option
+                if (index === 0) {
                     btn.classList.add('selected');
                     sizeHiddenInput.value = sizeObj.size;
-
-                    priceElem.innerText = `₹${sizeObj.price}`;
-
-                    if (sizeObj.old_price && parseFloat(sizeObj.old_price) > parseFloat(sizeObj.price)) {
-                        oldPriceElem.style.display = 'inline';
-                        oldPriceElem.innerText = `₹${sizeObj.old_price}`;
-
-                        const discount = Math.round((parseFloat(sizeObj.old_price) - parseFloat(sizeObj.price)) / parseFloat(sizeObj.old_price) * 100);
-                        discountElem.innerText = `${discount}% OFF`;
-                        discountElem.style.display = 'inline-block';
-                    } else {
-                        oldPriceElem.style.display = 'none';
-                        discountElem.style.display = 'none';
-                    }
-                };
-
-                sizeOptionsDiv.appendChild(btn);
+                }
             });
 
-            // Thumbnails
+            // Update thumbnails
             const thumbnailTrack = document.getElementById('variantThumbnails');
-            thumbnailTrack.innerHTML = '';
+            thumbnailTrack.innerHTML = ''; // Clear existing thumbnails
 
+            // Add main variant image thumbnail
             const mainBox = document.createElement('div');
             mainBox.classList.add('thumbnail-box');
             const mainImg = document.createElement('img');
@@ -305,6 +487,7 @@ function selectVariant(variantId) {
             mainBox.appendChild(mainImg);
             thumbnailTrack.appendChild(mainBox);
 
+            // Add extra images thumbnails
             data.extra_images.forEach(imgUrl => {
                 const box = document.createElement('div');
                 box.classList.add('thumbnail-box');
@@ -315,12 +498,20 @@ function selectVariant(variantId) {
                 thumbnailTrack.appendChild(box);
             });
 
+            // Add video thumbnail if present
             if (data.video) {
                 const box = document.createElement('div');
                 box.classList.add('thumbnail-box', 'video-thumbnail');
                 const video = document.createElement('video');
-                video.src = data.video;
-                video.onclick = () => setMedia(data.video, true);
+                // Use a 'source' tag for video thumbnail preview if needed,
+                // but the click should set the main video player.
+                // For a small preview, you might just use a poster attribute or a static image.
+                // For simplicity, directly using the video tag with source.
+                const videoThumbSource = document.createElement('source');
+                videoThumbSource.src = data.video;
+                videoThumbSource.type = "video/mp4";
+                video.appendChild(videoThumbSource);
+                video.onclick = () => setMedia(data.video, true); // Pass true for isVideo
                 const overlay = document.createElement('div');
                 overlay.classList.add('video-icon-overlay');
                 overlay.innerHTML = `<i class="fa fa-play-circle"></i>`;
@@ -328,53 +519,187 @@ function selectVariant(variantId) {
                 box.appendChild(overlay);
                 thumbnailTrack.appendChild(box);
             }
-        });
+            // After variant changes, update the media scroller arrows
+            initializeMediaScroller();
+            // Re-initialize image zoom for the new main image
+            setupImageZoom();
+        })
+        .catch(error => console.error('Error fetching variant data:', error));
 }
 
-function setMedia(url, isVideo = false) {
-    const imageTag = document.getElementById('variantMainImage');
-    const videoTag = document.getElementById('variantVideoTag');
-    const videoSource = document.getElementById('variantVideoSource');
 
-    if (isVideo) {
-        imageTag.style.display = 'none';
-        if (videoTag) {
-            videoTag.style.display = 'block';
-            videoSource.src = url;
-            videoTag.load();
+// --- Media Scroller Arrows ---
+let mediaList = [];
+let currentMediaIndex = 0;
+
+function initializeMediaScroller() {
+    const thumbnailTrack = document.getElementById('variantThumbnails');
+    const prevBtn = document.getElementById('prevMedia');
+    const nextBtn = document.getElementById('nextMedia');
+
+    // Reset and build the media list from the current thumbnails
+    mediaList = [];
+    thumbnailTrack.querySelectorAll('.thumbnail-box').forEach(box => {
+        const img = box.querySelector('img');
+        const video = box.querySelector('video');
+        if (img) {
+            mediaList.push({ url: img.src, isVideo: false });
+        } else if (video) {
+            const videoSource = video.querySelector('source'); // Get source tag for video URL
+            if (videoSource) {
+                 mediaList.push({ url: videoSource.src, isVideo: true });
+            }
         }
+    });
+
+    // Show or hide arrows based on the number of media items
+    if (mediaList.length > 1) {
+        prevBtn.style.display = 'block';
+        nextBtn.style.display = 'block';
     } else {
-        if (videoTag) videoTag.style.display = 'none';
-        imageTag.style.display = 'block';
-        imageTag.src = url;
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
     }
 }
 
-// Auto-load default variant
-window.addEventListener('DOMContentLoaded', () => {
-    const defaultVariantId = "{{ variant.id }}";
-    if (defaultVariantId) {
-        selectVariant(defaultVariantId);
-    }
-});
-</script>
+function scrollMedia(direction) {
+    const mainImage = document.getElementById('variantMainImage');
+    const videoSource = document.getElementById('variantVideoSource'); // Correctly target the source for video URL
 
-<script>
+    let currentUrl;
+    let isCurrentlyVideo = false;
+
+    // Determine current media URL and type
+    if (mainImage.style.display !== 'none') {
+        currentUrl = mainImage.src;
+        isCurrentlyVideo = false;
+    } else if (videoSource && videoSource.src) { // Check if video source exists and has a src
+        currentUrl = videoSource.src;
+        isCurrentlyVideo = true;
+    } else {
+        // Fallback or initial state
+        currentUrl = mediaList[0] ? mediaList[0].url : '';
+        isCurrentlyVideo = mediaList[0] ? mediaList[0].isVideo : false;
+    }
+
+
+    currentMediaIndex = mediaList.findIndex(item => {
+        // Normalize URLs for comparison, remove protocol for example, or common parts
+        const normalizeUrl = (url) => {
+            try {
+                const u = new URL(url);
+                return u.pathname; // Compare only the path
+            } catch (e) {
+                return url; // Fallback if not a valid URL
+            }
+        };
+
+        return normalizeUrl(item.url) === normalizeUrl(currentUrl);
+    });
+
+    // If current media not found, default to 0
+    if (currentMediaIndex === -1 && mediaList.length > 0) {
+        currentMediaIndex = 0;
+        setMedia(mediaList[currentMediaIndex].url, mediaList[currentMediaIndex].isVideo);
+        return; // Set and exit if initial state or not found
+    } else if (mediaList.length === 0) {
+        return; // No media to scroll
+    }
+
+    if (direction === 'next') {
+        currentMediaIndex = (currentMediaIndex + 1) % mediaList.length;
+    } else if (direction === 'prev') {
+        currentMediaIndex = (currentMediaIndex - 1 + mediaList.length) % mediaList.length;
+    }
+
+    const nextMedia = mediaList[currentMediaIndex];
+    setMedia(nextMedia.url, nextMedia.isVideo);
+}
+
+document.getElementById('nextMedia').addEventListener('click', () => scrollMedia('next'));
+document.getElementById('prevMedia').addEventListener('click', () => scrollMedia('prev'));
+
+// --- Image Zoom Functionality ---
+function setupImageZoom() {
+    const zoomContainer = document.querySelector('.zoom-container');
+    const mainImage = document.getElementById('variantMainImage');
+    const zoomWindow = document.querySelector('.zoom-window');
+    const videoTag = document.getElementById('variantVideoTag'); // Reference video tag
+
+    // Clear previous event listeners to avoid duplicates
+    if (zoomContainer) {
+        zoomContainer.removeEventListener('mouseenter', handleMouseEnter);
+        zoomContainer.removeEventListener('mouseleave', handleMouseLeave);
+        zoomContainer.removeEventListener('mousemove', handleMouseMove);
+    }
+
+    function handleMouseEnter() {
+        // Only enable zoom if the main image is displayed (not video)
+        if (mainImage.style.display !== 'none') {
+            zoomWindow.style.backgroundImage = `url('${mainImage.src}')`;
+            zoomWindow.style.display = 'block';
+            mainImage.classList.add('zoomed');
+        }
+    }
+
+    function handleMouseLeave() {
+        zoomWindow.style.display = 'none';
+        mainImage.classList.remove('zoomed');
+        // Reset transform origin when not zoomed for clean transition
+        mainImage.style.transformOrigin = 'center center';
+    }
+
+    function handleMouseMove(e) {
+        if (mainImage.style.display === 'none' || zoomWindow.style.display === 'none') {
+            return; // Don't process if image is hidden or zoom not active
+        }
+
+        const rect = zoomContainer.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const imgWidth = mainImage.offsetWidth;
+        const imgHeight = mainImage.offsetHeight;
+
+        // Calculate percentage for transform-origin (where to zoom from on the main image)
+        const xPercent = (x / imgWidth) * 100;
+        const yPercent = (y / imgHeight) * 100;
+
+        mainImage.style.transformOrigin = `${xPercent}% ${yPercent}%`;
+
+        // Calculate background position for the zoom window (magnified part)
+        // This makes the background image inside the zoom window shift opposite to mouse movement
+        // to give the magnifying effect. The '2' here corresponds to the `transform: scale(2)`
+        // in your CSS for `.zoomed` image. If you change the scale, update this value.
+        const bgPosX = -(x / imgWidth) * (mainImage.naturalWidth * 2 - zoomWindow.offsetWidth);
+        const bgPosY = -(y / imgHeight) * (mainImage.naturalHeight * 2 - zoomWindow.offsetHeight);
+
+        zoomWindow.style.backgroundPosition = `${bgPosX}px ${bgPosY}px`;
+        zoomWindow.style.backgroundSize = `${mainImage.naturalWidth * 2}px ${mainImage.naturalHeight * 2}px`; // Match scale
+    }
+
+    // Add event listeners if image is the primary display
+    if (mainImage && mainImage.style.display !== 'none') {
+        zoomContainer.addEventListener('mouseenter', handleMouseEnter);
+        zoomContainer.addEventListener('mouseleave', handleMouseLeave);
+        zoomContainer.addEventListener('mousemove', handleMouseMove);
+    }
+}
+
+
+// --- Add to Cart Script ---
 document.addEventListener('DOMContentLoaded', function () {
     const addToCartBtn = document.getElementById('add-to-cart-btn');
     if (!addToCartBtn) return;
-
     addToCartBtn.addEventListener('click', function () {
         const productId = this.dataset.pid;
         const variantId = document.getElementById('selectedVariantId')?.value || null;
         const size = document.getElementById('selected-size-hidden')?.value || null;
         const quantity = document.getElementById('product-quantity')?.value || 1;
-
         if (!size) {
             alert('Please select a size before adding to cart.');
             return;
         }
-
         fetch(this.dataset.url, {
             method: 'POST',
             headers: {
@@ -391,7 +716,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // ✅ Update cart count badge
                 const cartBadge = document.querySelector('.cart-count-badge');
                 if (cartBadge) {
                     cartBadge.textContent = data.total_items;
@@ -404,7 +728,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         icon.parentElement.appendChild(badge);
                     }
                 }
-
                 alert('Product added to cart successfully!');
             } else {
                 alert(data.error || 'Something went wrong while adding to cart.');
@@ -416,8 +739,82 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+// --- Review Form Script ---
+document.addEventListener('DOMContentLoaded', function() {
+    const reviewForm = document.querySelector('#review-form-section form');
+    if (!reviewForm) return;
+
+    const starWidget = reviewForm.querySelector('.star-rating-widget-unicode');
+    if (!starWidget) return;
+
+    const stars = starWidget.querySelectorAll('span');
+    const ratingInput = reviewForm.querySelector('#id_rating'); // Assuming this is the ID of your rating input
+
+    function setStarsVisual(ratingValue) {
+        stars.forEach(star => {
+            if (parseInt(star.dataset.value) <= parseInt(ratingValue)) {
+                star.textContent = '★'; // Solid star
+                star.classList.add('selected');
+            } else {
+                star.textContent = '☆'; // Empty star
+                star.classList.remove('selected');
+            }
+        });
+    }
+
+    // Set initial state based on existing rating if editing
+    if (ratingInput && ratingInput.value) {
+        setStarsVisual(ratingInput.value);
+    }
+
+    stars.forEach(star => {
+        star.addEventListener('mouseover', () => {
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= parseInt(star.dataset.value)) {
+                    s.textContent = '★';
+                    s.classList.add('hover');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('hover');
+                }
+            });
+        });
+
+        star.addEventListener('click', () => {
+            if (ratingInput) {
+                ratingInput.value = star.dataset.value;
+                setStarsVisual(ratingInput.value);
+            }
+        });
+    });
+
+    starWidget.addEventListener('mouseout', () => {
+        stars.forEach(s => s.classList.remove('hover'));
+        // Revert to the selected state if a rating is already set
+        if (ratingInput && ratingInput.value) {
+            setStarsVisual(ratingInput.value);
+        } else {
+            setStarsVisual(0); // If no rating, show all empty stars
+        }
+    });
+});
+
+
+// --- Initial Setup on DOM Content Loaded ---
+document.addEventListener('DOMContentLoaded', () => {
+    const defaultVariantId = "{{ variant.id }}";
+    if (defaultVariantId) {
+        // Call selectVariant to ensure initial state is correctly set up
+        // including size prices and thumbnails, and now zoom functionality.
+        selectVariant(defaultVariantId);
+    } else {
+        // If there's no default variant, ensure scroller and zoom are initialized anyway
+        initializeMediaScroller();
+        setupImageZoom();
+    }
+});
+
 </script>
-
-
 
 {% endblock %}

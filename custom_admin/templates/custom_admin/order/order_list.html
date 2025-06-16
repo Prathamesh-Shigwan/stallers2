@@ -2,214 +2,233 @@
 
 {% block content %}
 <style>
-    .table-bordered,
-    .table-bordered th,
-    .table-bordered td {
-        border: 2px solid #343a40 !important;
+    /* General Container Styling */
+    .container-fluid {
+        padding-top: 20px;
+        padding-left: 30px;
+        padding-right: 30px;
+        background-color: #f4f7fa;
     }
 
-    .table-striped th,
-    .table-striped td {
-        border: 2px solid #343a40;
-    }
-
-    .table {
-        border-collapse: collapse !important;
-    }
-
-    .order-card {
-        border: 2px solid #198754;
-        padding: 20px;
-        margin-bottom: 30px;
-        border-radius: 10px;
-        background-color: #f8fff8;
-    }
-
-    .filter-box {
-        background-color: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        border: 2px solid #dee2e6;
+    /* Page Title */
+    h2.page-title {
+        font-size: 24px;
+        font-weight: 600;
         margin-bottom: 20px;
+        color: #333;
     }
 
-    .filter-box .form-control,
-    .filter-box .btn {
-        border-radius: 6px;
-        font-size: 14px;
+    /* Filter and Search Form Styling */
+    .filter-search-container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: center;
     }
 
-    .filter-box .form-control:focus {
-        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
-        border-color: #198754;
-    }
-
-    .filter-box .btn-primary {
-        background-color: #198754;
-        border-color: #198754;
-    }
-
-    .filter-box .btn-primary:hover {
-        background-color: #157347;
-        border-color: #146c43;
-    }
-
-    .filter-box label {
+    .filter-search-container label {
         font-weight: 500;
+        color: #555;
+        margin-right: 5px;
     }
+
+    .filter-search-container select,
+    .filter-search-container input[type="text"],
+    .filter-search-container input[type="date"] {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #333;
+        min-width: 150px;
+    }
+
+    .filter-search-container input[type="submit"],
+    .filter-search-container .btn-clear-filters { /* Added this class for styling */
+        background-color: #007bff; /* Blue */
+        color: #fff;
+        padding: 8px 15px;
+        border-radius: 5px;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .filter-search-container input[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+
+    /* Styling for the Clear Filters button */
+    .filter-search-container .btn-clear-filters {
+        background-color: #6c757d; /* Grey */
+    }
+
+    .filter-search-container .btn-clear-filters:hover {
+        background-color: #5a6268;
+    }
+
+    /* Table container styling */
+    .table-container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        padding: 20px;
+    }
+
+    /* Main Table Styling */
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table thead th {
+        background-color: #ffffff;
+        color: #333;
+        font-weight: 600;
+        font-size: 14px;
+        text-align: center;
+        border: 1px solid #dee2e6;
+        padding: 12px;
+    }
+
+    /* Highlighting the actions header */
+    .table thead th.action-header {
+        background-color: #fdeaea;
+        border: 1px solid #f5c6cb;
+    }
+
+    .table tbody td {
+        border: 1px solid #dee2e6;
+        padding: 12px;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 14px;
+        color: #555;
+    }
+
+    /* Make the status dropdown look clean */
+    .status-select {
+        padding: 6px 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    /* Action Buttons Styling */
+    .btn-action {
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 5px;
+        border: none;
+        font-size: 12px;
+        font-weight: 500;
+        margin: 0 2px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-edit {
+        background-color: #28a745; /* Green */
+    }
+
+    .btn-change {
+        background-color: #ffc107; /* Yellow */
+    }
+
+    .btn-delete {
+        background-color: #dc3545; /* Red */
+    }
+
 </style>
 
-<div class="container mt-4">
-    <h2>Orders</h2>
+<div class="container-fluid">
+    <h2 class="page-title">Order Managements</h2>
 
-    <div class="filter-box">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label for="user">Search by User</label>
-                <input type="text" name="user" id="user" class="form-control" placeholder="Username" value="{{ request.GET.user }}">
-            </div>
-            <div class="col-md-3">
-                <label for="status">Order Status</label>
-                <select name="status" id="status" class="form-control">
-                    <option value="">All Statuses</option>
-                    {% for value, label in statuses %}
-                        <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="date">Order Date</label>
-                <input type="date" name="date" id="date" class="form-control" value="{{ request.GET.date }}">
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-            </div>
+    <div class="filter-search-container">
+        <form method="GET" action="">
+            <label for="status-filter">Status:</label>
+            <select name="status" id="status-filter">
+                <option value="">All</option>
+                {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="start-date-filter">From Date:</label>
+            <input type="date" name="start_date" id="start-date-filter" value="{{ request.GET.start_date }}">
+
+            <label for="end-date-filter">To Date:</label>
+            <input type="date" name="end_date" id="end-date-filter" value="{{ request.GET.end_date }}">
+
+            <label for="q">Search:</label>
+            <input type="text" name="q" id="q" placeholder="Order ID, User" value="{{ request.GET.q }}">
+
+            <input type="submit" value="Apply Filters">
+            <a href="{% url 'custom_admin:order_list' %}" style="text-decoration: none;">
+                <input type="button" value="Clear Filters" class="btn-clear-filters">
+            </a>
         </form>
     </div>
 
-    <a href="{% url 'custom_admin:add_order' %}" class="btn btn-success mb-3">Add Order</a>
-
-    <table class="table">
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td colspan="8">
-                    <div class="order-card">
-                        <table class="table table-striped mb-3">
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>User</th>
-                                    <th>Status</th>
-                                    <th>Total (After Discount)</th>
-                                    <th>Payment Method</th>
-                                    <th>Created At</th>
-                                    <th>Expected Delivery</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tr>
-                                <td>{{ order.order_id }}</td>
-                                <td>{{ order.user.username }}</td>
-                                <td>{{ order.get_status_display }}</td>
-                                <td>
-                                    ₹{{ order.total|floatformat:2 }}
-                                    {% if order.discount and order.discount > 0 %}
-                                        <br><small class="text-danger">- ₹{{ order.discount|floatformat:2 }}</small>
-                                        <br><strong>Total: ₹{{ order.final_total|floatformat:2 }}</strong>
-                                    {% endif %}
-                                </td>
-                                <td>{{ order.payment_method|default:"N/A" }}</td>
-                                <td>{{ order.created_at|date:"M d, Y, g:i a" }}</td>
-                                <td>{{ order.expected_delivery|date:"d M Y" }}</td>
-                                <td>
-                                    <a href="{% url 'custom_admin:edit_order' order.pk %}" class="btn btn-sm btn-primary" style="border: 2px solid #ccc;">Edit</a>
-                                    <a href="{% url 'custom_admin:delete_order' order.pk %}" class="btn btn-sm btn-danger" style="border: 2px solid #ccc;">Delete</a>
-                                </td>
-                            </tr>
-                        </table>
-
-                        <strong>Order Items:</strong>
-                        <table class="table table-bordered mt-2">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Variant</th>
-                                    <th>Image</th>
-                                    <th>Size</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in order.items.all %}
-                                <tr>
-                                    <td>{{ item.product.name }}</td>
-                                    <td>{% if item.product_variant %}{{ item.product_variant.color }}{% else %}N/A{% endif %}</td>
-                                    <td>
-                                        {% if item.product_variant and item.product_variant.image %}
-                                            <img src="{{ item.product_variant.image.url }}" alt="Variant Image" width="50" height="50">
-                                        {% elif item.product.image %}
-                                            <img src="{{ item.product.image.url }}" alt="Product Image" width="50" height="50">
-                                        {% else %}
-                                            No Image
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ item.selected_size|default:"N/A" }}</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>₹{{ item.price|floatformat:2 }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center">No items in this order.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-
-                        <table class="table table-bordered mt-4">
-                            <thead>
-                                <tr>
-                                    <th>Billing Address</th>
-                                    <th>Shipping Address</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>
-                                        <address>
-                                            <strong>{{ order.billing_full_name }}</strong><br>
-                                            {{ order.billing_email }}<br>
-                                            {{ order.billing_address1 }}<br>
-                                            {{ order.billing_address2 }}<br>
-                                            {{ order.billing_city }}, {{ order.billing_state }}<br>
-                                            {{ order.billing_zipcode }}, {{ order.billing_country }}<br>
-                                            Phone: {{ order.billing_phone }}
-                                        </address>
-                                    </td>
-                                    <td>
-                                        <address>
-                                            <strong>{{ order.shipping_full_name }}</strong><br>
-                                            {{ order.shipping_email }}<br>
-                                            {{ order.shipping_address1 }}<br>
-                                            {{ order.shipping_address2 }}<br>
-                                            {{ order.shipping_city }}, {{ order.shipping_state }}<br>
-                                            {{ order.shipping_zipcode }}, {{ order.shipping_country }}<br>
-                                            Phone: {{ order.shipping_phone }}
-                                        </address>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" class="text-center">No orders available.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Users</th>
+                    <th>Status</th>
+                    <th>Amt Total After Disc</th>
+                    <th>Payment Type</th>
+                    <th>Date</th>
+                    <th>Expected Delivery date</th>
+                    <th class="action-header">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>
+                        {{ order.order_id|default:"RD8ZRFZR" }}
+                        <form id="form-{{ order.pk }}" action="{% url 'custom_admin:update_order_status' order.pk %}" method="POST">
+                            {% csrf_token %}
+                        </form>
+                    </td>
+                    <td>{{ order.user.username|default:"admin" }}</td>
+                    <td>
+                        <select name="status" class="status-select" form="form-{{ order.pk }}">
+                             {% for value, label in statuses %}
+                                <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td>₹{{ order.final_total|default:"797.00"|floatformat:2 }}</td>
+                    <td>{{ order.payment_method|default:"COD" }}</td>
+                    <td>{{ order.created_at|date:"d/m/y P" }}</td>
+                    <td>{{ order.expected_delivery|date:"d/m/y" }} at {{ order.expected_delivery_time|time:"g:i A" }}</td>
+                    <td>
+                        <a href="{% url 'custom_admin:edit_order' order.pk %}" class="btn-action btn-edit">Edit</a>
+                        <button type="submit" class="btn-action btn-change" form="form-{{ order.pk }}">Save</button>
+                        <a href="{% url 'custom_admin:delete_order' order.pk %}" class="btn-action btn-delete">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No orders found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

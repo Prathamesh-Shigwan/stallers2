@@ -79,3 +79,17 @@ class FeedbackForm(forms.Form):
     )
 
 
+class ReviewForm(forms.ModelForm):
+    review = forms.CharField(widget=forms.Textarea(attrs={'placeholder': 'Write your review here...'}))
+
+    class Meta:
+        model = ProductsReviews
+        fields = ['rating', 'review']
+
+    def __init__(self, *args, **kwargs):
+        super(ReviewForm, self).__init__(*args, **kwargs)
+        # Add custom styling or attributes if needed
+        self.fields['rating'].widget.attrs.update({'class': 'form-control'})
+        self.fields['review'].widget.attrs.update({'class': 'form-control', 'rows': 5})
+
+

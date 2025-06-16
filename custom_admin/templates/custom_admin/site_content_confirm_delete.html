@@ -1,0 +1,43 @@
+{% extends "custom_admin/base_site.html" %}
+{% load static %}
+{% block title %}Sitecontent{% endblock %}
+
+
+{% block content %}
+
+<div class="container mt-4">
+    <h1 class="mb-4">{{ page_title }}</h1>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if site_content %}
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Are you sure you want to delete the Site Content?</h4>
+        <p>This action is irreversible. Deleting the Site Content will remove all custom messages for the discount popup and promo strip, reverting them to their default values (if any defaults are coded in the template).</p>
+        <hr>
+        <p class="mb-0">Please confirm your decision.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="confirm_delete" value="true">
+        <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+        <a href="{% url 'custom_admin:site_content_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+    {% else %}
+    <div class="alert alert-warning" role="alert">
+        No Site Content found to delete.
+    </div>
+    <a href="{% url 'custom_admin:site_content_list' %}" class="btn btn-info">Back to Site Content</a>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 {% load static %}
+{% load custom_filters %} {# Ensure this is at the top #}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f9f9f9; font-size: 12px; }
+        .qr-code-img {
+            width: 50px; /* Adjust size as necessary for print/view */
+            height: 50px;
+            display: block;
+            margin: 0 auto; /* Center the QR code */
+        }
         .invoice-container { max-width: 800px; margin: 20px auto; padding: 20px; background: #fff; border: 1px solid #ddd; }
         .header, .footer { text-align: center; margin-bottom: 20px; }
         .section { margin-bottom: 25px; }
@@ -29,7 +36,7 @@
         <h1><img src="{% static 'images/logo/STELLAR_logo.svg' %}" alt="logo image" style="width: 350px; height: 50px;"></h1>
         <p>Unit no 9, Ramjas Society, Farid Nagar, PN Road, Bhandup West
         Mumbai, India, Pin: 400078
-        <br>Phone: +91 84510 31694</p>
+        <br>Phone: +91 84510 31694<br>E-mail: Stellarspvt@gmail.com</p>
     </div>
 
     <div class="section">
@@ -39,7 +46,7 @@
                 <th>Invoice ID</th>
                 <td>{{ order.id }}</td>
                 <th>Order ID</th>
-                <td>#{{ order.id }}</td>
+                <td>#{{ order.order_id }}</td>
             </tr>
             <tr>
                 <th>Payment Mode</th>
@@ -61,7 +68,7 @@
                 <td>
                     Name: {{ billing_address.full_name }}<br>
                     Email: {{ billing_address.email }}<br>
-                    Address: {{ billing_address.address1 }} {{ billing_address.address2 }}<br>
+                    Address: {{ billing_address.address1 }}{% if billing_address.address2 %}, {{ billing_address.address2 }}{% endif %}<br>
                     Zip: {{ billing_address.zipcode }}<br>
                     City: {{ billing_address.city }}<br>
                     State: {{ billing_address.state }}, {{ billing_address.country }}<br>
@@ -69,7 +76,8 @@
                 </td>
                 <td>
                     Name: {{ shipping_address.full_name }}<br>
-                    Address: {{ shipping_address.address1 }} {{ shipping_address.address2 }}<br>
+                    Email: {{ shipping_address.email }}<br>
+                    Address: {{ shipping_address.address1 }}{% if shipping_address.address2 %}, {{ shipping_address.address2 }}{% endif %}<br>
                     Zip: {{ shipping_address.zipcode }}<br>
                     City: {{ shipping_address.city }}<br>
                     State: {{ shipping_address.state }}, {{ shipping_address.country }}<br>
@@ -93,6 +101,7 @@
                     <th>CGST</th>
                     <th>SGST</th>
                     <th>IGST</th>
+                    <th>QR Code</th>
                     <th>Total</th>
                 </tr>
             </thead>
@@ -108,9 +117,9 @@
                     </td>
                     <td>42021290</td>
                     <td>x {{ item.quantity }}</td>
-                    <td>₹ {{ item.unit_price|floatformat:2 }}</td>
+                    <td>₹ {{ item.price|floatformat:2 }}</td>
                     <td>₹ 0</td>
-                    <td>₹ {{ item.unit_price|floatformat:2 }}</td>
+                    <td>₹ {{ item.quantity|mul:item.price|floatformat:2 }}</td>
                 {% if is_interstate %}
                     <td>-</td>
                     <td>-</td>
@@ -120,32 +129,46 @@
                     <td>9%</td>
                     <td>-</td>
                 {% endif %}
+                    <td>
+                        {% if item.qr_code_data %}
+                            <img src="{{ item.qr_code_data }}" class="qr-code-img" alt="Product QR Code">
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>₹ {{ item.quantity|mul:item.price|floatformat:2 }}</td>
 
-                    <td>₹ {{ item.unit_price|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="9" style="text-align: right; font-weight: bold;">Grand Total (Before Discount)</td>
-                    <td style="font-weight: bold;">₹ {{ order.total|floatformat:2 }}</td>
+                    <td colspan="10" style="text-align: right; font-weight: bold;">Product Total (after discount, excluding tax)</td> {# Colspan changed #}
+                    <td style="font-weight: bold;">₹ {{ product_total_excluding_tax|floatformat:2 }}</td>
+                </tr>
+                 <tr>
+                    <td colspan="10" style="text-align: right; font-weight: bold;">Total Tax</td> {# Colspan changed #}
+                    <td style="font-weight: bold;">₹ {{ tax_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td colspan="10" style="text-align: right; font-weight: bold;">Product Total (after discount, including tax)</td> {# Colspan changed #}
+                    <td style="font-weight: bold;">₹ {{ product_total_after_discount_and_inclusive_tax|floatformat:2 }}</td>
                 </tr>
             </tfoot>
         </table>
     </div>
 
     <div class="section totals">
-        <p><strong>Total Excluding Tax:</strong> ₹ {{ total_excluding|floatformat:2 }}</p>
-        <p><strong>Total Tax:</strong> ₹ {{ taxable_amount|floatformat:2 }}</p>
-        <p><strong>Product Total Including Tax:</strong> ₹ {{ order.total|floatformat:2 }}</p>
+        <p><strong>Product Total (Including Tax):</strong> ₹ {{ product_total_after_discount_and_inclusive_tax|floatformat:2 }}</p>
 
-        {% if discount and discount > 0 %}
-        <p><strong>Discount:</strong> - ₹ {{ discount|floatformat:2 }}</p>
+        {% if actual_discount_amount and actual_discount_amount > 0 %}
+        <p><strong>Discount (Code: {{ discount_code|default:"N/A" }}):</strong> - ₹ {{ actual_discount_amount|floatformat:2 }}</p>
         {% endif %}
 
         <p><strong>Add: Shipping Charges</strong> ₹ {{ shipping_charge|floatformat:2 }}</p>
 
-        <h2><strong>Total Order Value:</strong> ₹ {{ final_total|floatformat:2 }}</h2>
+        <h2><strong>Grand Total:</strong> ₹ {{ grand_total_to_pay|floatformat:2 }}</h2>
+        <p style="font-size: 10px; color: #666; margin-top: 5px;">(Includes all taxes and shipping)</p>
     </div>
 
     <div class="footer">

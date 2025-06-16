@@ -7,7 +7,6 @@ from django.contrib.auth import views as auth_views
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),                 # Default Django/Jazzmin custom_admin panel
     path('', home, name='home'),                     # Home page
     path('products/', include('products.urls', namespace='products')),
     path('accounts/', include('accounts.urls')),     # Accounts URLs

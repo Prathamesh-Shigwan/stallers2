@@ -14,7 +14,7 @@
 
 
         <!-- End Offset Wrapper -->
-        <div class="ht__bradcaump__area bradcaump--2">
+        <div class="ht__bradcaump__area bradcaump--2" style="background-image: url('{% static 'images/bagse.png' %}'); background-repeat: no-repeat; background-size: cover; background-position: center center;">
             <div class="google__map">
                 <div class="map-contacts">
                     <div id="googleMap2"></div>
@@ -28,7 +28,7 @@
                                 <nav class="bradcaump-inner">
                                   <a class="breadcrumb-item" href="{% url 'home' %}">Home</a>
                                   <span class="brd-separetor"><i class="zmdi zmdi-chevron-right"></i></span>
-                                  <span class="breadcrumb-item active">Product</span>
+                                  <span class="breadcrumb-item active">Blog</span>
                                 </nav>
                             </div>
                         </div>
@@ -255,23 +255,30 @@
                                             <a><i class="icon-handbag icons"></i></a>
                                         </button>
                                     </li>
-                                    <li><a href="#"><i class="icon-shuffle icons"></i></a></li>
+                                    <li>
+                                        <a href="#" class="share-product-btn"
+                                           data-product-url="{% url 'products:product_details' p.pid %}"
+                                           data-product-name="{{ p.name }}"
+                                           data-product-description="{{ p.description|striptags|truncatechars:150 }}"
+                                           data-product-image="{{ v.image.url }}"> {# Using 'v.image.url' for the variant image #}
+                                            <i class="icon-share-alt icons"></i> {# Changed icon to share-alt for clarity #}
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
                         <div class="product__inner">
-                            <div class="product__details">
-                                <h2 style="color: black; font-size: 15px; font-weight: 600; margin: 10px 0;">
-                                    <a href="{% url 'products:product_details' p.pid %}">{{ p.name }}</a>
-                                </h2>
-                                <ul style="display: flex; align-items: center; gap: 10px; list-style: none; padding: 0; margin: 5px 0;">
-                                    {% if s.old_price %}
-                                    <li style="text-decoration: line-through; color: #999;">&#8377; {{ s.old_price }}</li>
-                                    {% endif %}
-                                    <li style="font-weight: bold; color: black;">&#8377; {{ s.price }}</li>
-                                </ul>
-                            </div>
-                        </div>
+    <div class="product__details" style="text-align: center;">  <h2 style="color: black; font-size: 15px; font-weight: 600; margin: 10px 0;">
+            <a href="{% url 'products:product_details' p.pid %}">{{ p.name }}</a>
+        </h2>
+        <ul style="display: flex; align-items: center; justify-content: center; gap: 10px; list-style: none; padding: 0; margin: 5px 0;">
+            {% if s.old_price %}
+            <li style="text-decoration: line-through; color: #999;">&#8377; {{ s.old_price }}</li>
+            {% endif %}
+            <li style="font-weight: bold; color: black;">&#8377; {{ s.price }}</li>
+        </ul>
+    </div>
+</div>
                     </div>
                 </div>
                 {% endif %}
@@ -355,6 +362,117 @@
         <!-- End Banner Area -->
         <!-- End Banner Area -->
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... (Your existing wishlist and add-to-cart scripts should be here) ...
+
+        // Share Product Functionality
+        $(document).on("click", ".share-product-btn", function(e) {
+            e.preventDefault(); // Prevent the default link behavior
+
+            const button = $(this);
+            // Construct absolute URLs using request.build_absolute_uri (passed as a JS variable from Django context if possible)
+            // Or directly construct if request.build_absolute_uri is used in template directly.
+            // For this product grid page, we'll assume the data-product-url is relative.
+            const productRelativeUrl = button.data('product-url');
+            // Dynamically get base URL and combine to form absolute URL
+            // Ensure your Django view provides 'request' in the context, and your SITE_ID is configured.
+            // Here, we'll construct it based on window.location.origin
+            const productUrl = window.location.origin + productRelativeUrl;
+
+
+            const productName = button.data('product-name');
+            const productDescription = button.data('product-description');
+            const productImageRelativeUrl = button.data('product-image');
+            const productImage = window.location.origin + productImageRelativeUrl;
+
+
+            // Check if Web Share API is available
+            if (navigator.share) {
+                navigator.share({
+                    title: productName,
+                    text: productDescription,
+                    url: productUrl,
+                    // You can potentially share files (like the product image), but it's more complex
+                    // and might require the image to be fetched and provided as a File object.
+                    // For simpler cases, providing URL and text is sufficient.
+                    // files: [new File([''], 'product_image.jpg', { type: 'image/jpeg' })] // Placeholder, complex to implement
+                })
+                .then(() => console.log('Product shared successfully'))
+                .catch((error) => {
+                    console.error('Error sharing product via Web Share API:', error);
+                    // Fallback to custom popup if native share fails (e.g., user cancels)
+                    showCustomSharePopup(productName, productDescription, productUrl, productImage);
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                showCustomSharePopup(productName, productDescription, productUrl, productImage);
+            }
+        });
+
+        // Function to show the custom share popup
+        function showCustomSharePopup(name, description, url, imageUrl) {
+            const shareText = encodeURIComponent(`${name} - ${description}`);
+            const shareUrl = encodeURIComponent(url);
+            const shareImageUrl = encodeURIComponent(imageUrl); // For platforms that support image pre-fill
+
+            const shareLinks = {
+                facebook: `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`,
+                twitter: `https://twitter.com/intent/tweet?url=${shareUrl}&text=${shareText}`,
+                linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${shareUrl}&title=${encodeURIComponent(name)}&summary=${shareText}`,
+                whatsapp: `https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`,
+                // You can add more, e.g., email: `mailto:?subject=${encodeURIComponent(name)}&body=${shareText}%0A${shareUrl}`
+            };
+
+            let shareOptionsHtml = `
+                <div class="share-popup-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10000; overflow: auto;">
+                    <div class="share-popup-content" style="background: white; padding: 30px; border-radius: 8px; text-align: center; max-width: 400px; width: 90%; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative;">
+                        <button class="close-share-popup" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: #555;">&times;</button>
+                        <h4 style="margin-bottom: 20px; font-weight: 600; color: #333;">Share this Product</h4>
+                        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;">
+                            <a href="${shareLinks.facebook}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px; transition: transform 0.2s;">
+                                <img src="{% static 'images/social-icons/facebook.svg' %}" alt="Facebook" style="width: 40px; height: 40px; margin-bottom: 5px;"> Facebook
+                            </a>
+                            <a href="${shareLinks.twitter}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px; transition: transform 0.2s;">
+                                <img src="{% static 'images/social-icons/twitter.svg' %}" alt="Twitter" style="width: 40px; height: 40px; margin-bottom: 5px;"> Twitter
+                            </a>
+                            <a href="${shareLinks.whatsapp}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px; transition: transform 0.2s;">
+                                <img src="{% static 'images/social-icons/whatsapp.svg' %}" alt="WhatsApp" style="width: 40px; height: 40px; margin-bottom: 5px;"> WhatsApp
+                            </a>
+                            <a href="${shareLinks.linkedin}" target="_blank" class="share-icon-btn" style="text-decoration: none; color: #333; display: flex; flex-direction: column; align-items: center; font-size: 12px; transition: transform 0.2s;">
+                                <img src="{% static 'images/social-icons/linkedin.svg' %}" alt="LinkedIn" style="width: 40px; height: 40px; margin-bottom: 5px;"> LinkedIn
+                            </a>
+                        </div>
+                        <button class="copy-link-btn" data-url="${url}" style="background-color: #eee; border: 1px solid #ccc; padding: 10px 20px; border-radius: 5px; margin-top: 25px; cursor: pointer; font-weight: 600; color: #333; width: calc(100% - 40px); max-width: 250px; transition: background-color 0.2s;">
+                            <i class="icon-link icons" style="margin-right: 5px;"></i> Copy Link
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            $('body').append(shareOptionsHtml); // Add popup to body
+
+            // Close popup
+            $('.close-share-popup, .share-popup-overlay').on('click', function(event) {
+                if ($(event.target).hasClass('share-popup-overlay') || $(event.target).hasClass('close-share-popup')) {
+                    $('.share-popup-overlay').remove();
+                }
+            });
+
+            // Copy link functionality in popup
+            $('.copy-link-btn').on('click', function() {
+                const urlToCopy = $(this).data('url');
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    alert('Product link copied to clipboard!');
+                    $('.share-popup-overlay').remove(); // Close popup after copying
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Could not copy link. Please copy it manually: ' + urlToCopy);
+                });
+            });
+        }
+    });
+</script>
 <script>
 function getCookie(name) {
     let cookieValue = null;
